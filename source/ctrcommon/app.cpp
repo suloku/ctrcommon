@@ -249,7 +249,7 @@ AppResult appDelete(App app) {
         return APP_AM_INIT_FAILED;
     }
 
-    Result res = AM_DeleteAppTitle(appMediatypeToByte(app.mediaType), app.titleId);
+    Result res = AM_DeleteTitle(appMediatypeToByte(app.mediaType), app.titleId);
     if(res != 0) {
         platformSetError(serviceParseError((u32) res));
         return APP_DELETE_FAILED;
