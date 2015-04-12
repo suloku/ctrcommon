@@ -486,6 +486,9 @@ std::string platformGetErrorString(Error error) {
         case DESCRIPTION_REQUEST_TIMED_OUT:
             result << "Request timed out";
             break;
+        case DESCRIPTION_INVALID_SIGNATURE:
+            result << "Invalid signature";
+            break;
         case DESCRIPTION_TITLE_NOT_FOUND:
             result << "Title not found";
             break;
