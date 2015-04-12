@@ -56,6 +56,8 @@ AcquireResult platformAcquireServices() {
         return ACQUIRE_KHAX_FAILED;
     }
 
+    SaveVersionConstants();
+
     svcGetProcessId(&selfPid, 0xFFFF8001);
     svcBackdoor(platformPatchPid);
 
