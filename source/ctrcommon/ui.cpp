@@ -450,7 +450,7 @@ RemoteFile uiAcceptRemoteFile(Screen screen) {
 
     uiDisplayMessage(screen, "Reading info...");
 
-    u64 fileSize;
+    u64 fileSize = 0;
     u64 bytesRead = 0;
     while(platformIsRunning()) {
         u64 currBytesRead = fread(&fileSize, 1, (size_t) (sizeof(fileSize) - bytesRead), socket);

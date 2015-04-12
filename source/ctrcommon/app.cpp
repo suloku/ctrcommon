@@ -3,6 +3,7 @@
 #include "service.hpp"
 
 #include <sys/errno.h>
+#include <sys/stat.h>
 #include <sys/unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -161,9 +162,9 @@ AppResult appInstallFile(MediaType mediaType, const std::string path, std::funct
         return APP_OPEN_FILE_FAILED;
     }
 
-    fseek(fd, 0, SEEK_END);
-    u64 size = (u64) ftell(fd);
-    fseek(fd, 0, SEEK_SET);
+    struct stat st;
+    stat(path.c_str(), &st);
+    u64 size = (u64) st.st_size;
 
     AppResult ret = appInstall(mediaType, fd, size, onProgress);
 
