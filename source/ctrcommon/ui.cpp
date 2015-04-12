@@ -186,7 +186,7 @@ void uiGetDirContents(std::vector<SelectableElement> &elements, const std::strin
 
                 std::vector<std::string> info;
                 std::stringstream stream;
-                stream << "File Size: " << st.st_size << " bytes (" << std::fixed << std::setprecision(2) << st.st_size / 1024.0f / 1024.0f << "MB)";
+                stream << "File Size: " << ((u32) st.st_size) << " bytes (" << std::fixed << std::setprecision(2) << ((u32) st.st_size) / 1024.0f / 1024.0f << "MB)";
                 info.push_back(stream.str());
                 elements.push_back({path, dirName, info});
             }
