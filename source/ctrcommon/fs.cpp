@@ -108,12 +108,17 @@ std::vector<FileInfo> fsGetDirectoryContents(const std::string directory) {
 }
 
 bool fsDelete(const std::string path) {
-    Result res;
-    if(fsIsDirectory(path)) {
-        res = FSUSER_DeleteDirectory(NULL, sdmcArchive, FS_makePath(PATH_CHAR, fsFixPath(path).c_str()));
-    } else {
-        res = FSUSER_DeleteFile(NULL, sdmcArchive, FS_makePath(PATH_CHAR, fsFixPath(path).c_str()));
+    Result res = FSUSER_OpenArchive(NULL, &sdmcArchive);
+    if(res == 0) {
+        if(fsIsDirectory(path)) {
+            res = FSUSER_DeleteDirectory(NULL, sdmcArchive, FS_makePath(PATH_CHAR, fsFixPath(path).c_str()));
+        } else {
+            res = FSUSER_DeleteFile(NULL, sdmcArchive, FS_makePath(PATH_CHAR, fsFixPath(path).c_str()));
+        }
+
+        FSUSER_CloseArchive(NULL, &sdmcArchive);
     }
+
 
     if(res != 0) {
         platformSetError(serviceParseError((u32) res));
