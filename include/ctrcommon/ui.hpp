@@ -21,8 +21,8 @@ typedef struct {
 } RemoteFile;
 
 bool uiSelect(SelectableElement* selected, std::vector<SelectableElement> elements, std::function<bool(std::vector<SelectableElement> &currElements, bool &elementsDirty, bool &resetCursorIfDirty)> onLoop, std::function<bool(SelectableElement select)> onSelect, bool useTopScreen = true, bool alphabetize = true);
-bool uiSelectFile(std::string* selectedFile, const std::string rootDirectory, std::vector<std::string> extensions, std::function<bool(bool inRoot)> onLoop, bool useTopScreen = true);
-bool uiSelectApp(App* selectedApp, MediaType mediaType, std::function<bool()> onLoop, bool useTopScreen = true);
+bool uiSelectFile(std::string* selectedFile, const std::string rootDirectory, std::vector<std::string> extensions, std::function<bool(bool inRoot)> onLoop, std::function<bool(std::string path, bool &updateList)> onSelect, bool useTopScreen = true);
+bool uiSelectApp(App* selectedApp, MediaType mediaType, std::function<bool()> onLoop, std::function<bool(App app, bool &updateList)> onSelect, bool useTopScreen = true);
 void uiDisplayMessage(Screen screen, const std::string message);
 bool uiPrompt(Screen screen, const std::string message, bool question);
 void uiDisplayProgress(Screen screen, const std::string operation, const std::string details, bool quickSwap, int progress);

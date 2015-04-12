@@ -196,14 +196,15 @@ void uiGetDirContents(std::vector<SelectableElement> &elements, const std::strin
     closedir(dir);
 }
 
-bool uiSelectFile(std::string* selectedFile, const std::string rootDirectory, std::vector<std::string> extensions, std::function<bool(bool inRoot)> onLoop, bool useTopScreen) {
+bool uiSelectFile(std::string* selectedFile, const std::string rootDirectory, std::vector<std::string> extensions, std::function<bool(bool inRoot)> onLoop, std::function<bool(std::string path, bool &updateList)> onSelect, bool useTopScreen) {
     std::stack<std::string> directoryStack;
     std::string currDirectory = rootDirectory;
 
     std::vector<SelectableElement> elements;
     uiGetDirContents(elements, currDirectory, extensions);
 
-    bool changeDirectory = false;
+    bool updateContents = false;
+    bool resetCursor = true;
     SelectableElement selected;
     bool result = uiSelect(&selected, elements, [&](std::vector<SelectableElement> &currElements, bool &elementsDirty, bool &resetCursorIfDirty) {
         if(onLoop != NULL && onLoop(directoryStack.empty())) {
@@ -213,13 +214,15 @@ bool uiSelectFile(std::string* selectedFile, const std::string rootDirectory, st
         if(inputIsPressed(BUTTON_B) && !directoryStack.empty()) {
             currDirectory = directoryStack.top();
             directoryStack.pop();
-            changeDirectory = true;
+            updateContents = true;
         }
 
-        if(changeDirectory) {
+        if(updateContents) {
             uiGetDirContents(currElements, currDirectory, extensions);
             elementsDirty = true;
-            changeDirectory = false;
+            resetCursorIfDirty = resetCursor;
+            updateContents = false;
+            resetCursor = true;
         }
 
         return false;
@@ -230,18 +233,25 @@ bool uiSelectFile(std::string* selectedFile, const std::string rootDirectory, st
             if(!directoryStack.empty()) {
                 currDirectory = directoryStack.top();
                 directoryStack.pop();
-                changeDirectory = true;
+                updateContents = true;
             }
 
             return false;
         } else if(fsIsDirectory(select.id)) {
             directoryStack.push(currDirectory);
             currDirectory = select.id;
-            changeDirectory = true;
+            updateContents = true;
             return false;
         }
 
-        return true;
+        bool updateList = false;
+        bool ret = onSelect(select.id, updateList);
+        if(updateList) {
+            updateContents = true;
+            resetCursor = false;
+        }
+
+        return ret;
     }, useTopScreen, true);
 
     if(result) {
@@ -251,9 +261,7 @@ bool uiSelectFile(std::string* selectedFile, const std::string rootDirectory, st
     return result;
 }
 
-bool uiSelectApp(App* selectedApp, MediaType mediaType, std::function<bool()> onLoop, bool useTopScreen) {
-    std::vector<App> apps = appList(mediaType);
-    std::vector<SelectableElement> elements;
+void uiGetApps(std::vector<SelectableElement> &elements, std::vector<App> apps) {
     for(std::vector<App>::iterator it = apps.begin(); it != apps.end(); it++) {
         App app = *it;
 
@@ -276,20 +284,59 @@ bool uiSelectApp(App* selectedApp, MediaType mediaType, std::function<bool()> on
     if(elements.size() == 0) {
         elements.push_back({"None", "None"});
     }
+}
 
+bool uiFindApp(App* result, std::string id, std::vector<App> apps) {
+    for(std::vector<App>::iterator it = apps.begin(); it != apps.end(); it++) {
+        App app = *it;
+        if(app.titleId == (u64) strtoll(id.c_str(), NULL, 16)) {
+            *result = app;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool uiSelectApp(App* selectedApp, MediaType mediaType, std::function<bool()> onLoop, std::function<bool(App app, bool &updateList)> onSelect, bool useTopScreen) {
+    std::vector<SelectableElement> elements;
+
+    std::vector<App> apps = appList(mediaType);
+    uiGetApps(elements, apps);
+
+    bool updateContents = false;
     SelectableElement selected;
     bool result = uiSelect(&selected, elements, [&](std::vector<SelectableElement> &currElements, bool &elementsDirty, bool &resetCursorIfDirty) {
+        if(updateContents) {
+            apps = appList(mediaType);
+            uiGetApps(currElements, apps);
+            elementsDirty = true;
+            resetCursorIfDirty = false;
+            updateContents = false;
+        }
+
         return onLoop != NULL && onLoop();
     }, [&](SelectableElement select) {
-        return select.name.compare("None") != 0;
+        if(select.name.compare("None") != 0) {
+            App app;
+            if(uiFindApp(&app, select.id, apps)) {
+                bool updateList = false;
+                bool ret = onSelect(app, updateList);
+                if(updateList) {
+                    updateContents = true;
+                }
+
+                return ret;
+            }
+        }
+
+        return false;
     }, useTopScreen, true);
 
     if(result) {
-        for(std::vector<App>::iterator it = apps.begin(); it != apps.end(); it++) {
-            App app = *it;
-            if(app.titleId == (u64) strtoll(selected.id.c_str(), NULL, 16)) {
-                *selectedApp = app;
-            }
+        App app;
+        if(uiFindApp(&app, selected.id, apps)) {
+            *selectedApp = app;
         }
     }
 
