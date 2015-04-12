@@ -349,27 +349,32 @@ bool uiPrompt(Screen screen, const std::string message, bool question) {
         stream << "Press Start to continue." << "\n";
     }
 
+    bool result = false;
     std::string str = stream.str();
     while(platformIsRunning()) {
         inputPoll();
         if(question) {
             if(inputIsPressed(BUTTON_A)) {
-                return true;
+                result = true;
+                break;
             }
 
             if(inputIsPressed(BUTTON_B)) {
-                return false;
+                result = false;
+                break;
             }
         } else {
             if(inputIsPressed(BUTTON_START)) {
-                return true;
+                result = true;
+                break;
             }
         }
 
         uiDisplayMessage(screen, str);
     }
 
-    return false;
+    inputPoll();
+    return result;
 }
 
 void uiDisplayProgress(Screen screen, const std::string operation, const std::string details, bool quickSwap, int progress) {
