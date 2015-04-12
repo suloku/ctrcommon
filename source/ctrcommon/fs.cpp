@@ -6,6 +6,7 @@
 #include <sys/unistd.h>
 #include <stdio.h>
 
+#include <algorithm>
 #include <sstream>
 
 #include <3ds.h>
@@ -36,10 +37,6 @@ const std::string fsFixPath(const std::string path) {
 }
 
 u64 fsGetFreeSpace(MediaType mediaType) {
-    if(!serviceRequire("fs")) {
-        return 0;
-    }
-
     u32 clusterSize;
     u32 freeClusters;
     Result res = 0;
@@ -77,8 +74,47 @@ bool fsIsDirectory(const std::string path) {
     return false;
 }
 
+bool fsHasExtension(const std::string path, const std::string extension) {
+    std::string::size_type dotPos = path.rfind('.');
+    return dotPos != std::string::npos && path.substr(dotPos + 1).compare(extension) == 0;
+}
+
+bool fsHasExtensions(const std::string path, const std::vector<std::string> extensions) {
+    std::string::size_type dotPos = path.rfind('.');
+    return extensions.empty() || (dotPos != std::string::npos && std::find(extensions.begin(), extensions.end(), path.substr(dotPos + 1)) != extensions.end());
+}
+
+std::vector<FileInfo> fsGetDirectoryContents(const std::string directory) {
+    std::vector<FileInfo> result;
+    bool hasSlash = directory.size() != 0 && directory[directory.size() - 1] == '/';
+    const std::string dirWithSlash = hasSlash ? directory : directory + "/";
+
+    DIR* dir = opendir(dirWithSlash.c_str());
+    if(dir == NULL) {
+        return result;
+    }
+
+    while(true) {
+        struct dirent* ent = readdir(dir);
+        if(ent == NULL) {
+            break;
+        }
+
+        result.push_back({dirWithSlash + std::string(ent->d_name), std::string(ent->d_name)});
+    }
+
+    closedir(dir);
+    return result;
+}
+
 bool fsDelete(const std::string path) {
-    Result res = FSUSER_DeleteFile(NULL, sdmcArchive, FS_makePath(PATH_CHAR, fsFixPath(path).c_str()));
+    Result res;
+    if(fsIsDirectory(path)) {
+        res = FSUSER_DeleteDirectory(NULL, sdmcArchive, FS_makePath(PATH_CHAR, fsFixPath(path).c_str()));
+    } else {
+        res = FSUSER_DeleteFile(NULL, sdmcArchive, FS_makePath(PATH_CHAR, fsFixPath(path).c_str()));
+    }
+
     if(res != 0) {
         platformSetError(serviceParseError((u32) res));
     }

@@ -65,10 +65,6 @@ const std::string inputGetButtonName(Button button) {
 }
 
 void inputPoll() {
-    if(!serviceRequire("hid")) {
-        return;
-    }
-
     hidScanInput();
 }
 
@@ -93,34 +89,18 @@ Button inputGetAnyPressed() {
 }
 
 bool inputIsReleased(Button button) {
-    if(!serviceRequire("hid")) {
-        return false;
-    }
-
     return (hidKeysUp() & button) != 0;
 }
 
 bool inputIsPressed(Button button) {
-    if(!serviceRequire("hid")) {
-        return false;
-    }
-
     return (hidKeysDown() & button) != 0;
 }
 
 bool inputIsHeld(Button button) {
-    if(!serviceRequire("hid")) {
-        return false;
-    }
-
     return (hidKeysHeld() & button) != 0;
 }
 
 Touch inputGetTouch() {
-    if(!serviceRequire("hid")) {
-        return {0, 0};
-    }
-
     touchPosition pos;
     hidTouchRead(&pos);
     return {pos.px, pos.py};

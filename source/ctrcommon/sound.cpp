@@ -4,7 +4,7 @@
 
 #include <3ds.h>
 
-void*soundAlloc(u32 size) {
+void* soundAlloc(u32 size) {
     return linearAlloc(size);
 }
 

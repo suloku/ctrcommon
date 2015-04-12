@@ -12,25 +12,6 @@
 
 static u32* socBuffer;
 
-Result fullFsInit() {
-    Result fsResult = fsInit();
-    if(fsResult != 0) {
-        return fsResult;
-    }
-
-    Result sdmcResult = sdmcInit();
-    if(sdmcResult != 0) {
-        return sdmcResult;
-    }
-
-    return 0;
-}
-
-void fullFsExit() {
-    sdmcExit();
-    fsExit();
-}
-
 Result socInit() {
     socBuffer = (u32*) memalign(0x1000, 0x100000);
     if(socBuffer == NULL) {
@@ -56,17 +37,8 @@ void socCleanup() {
 }
 
 static std::map<std::string, std::function<void()>> services;
-static bool servicesInitialized = false;
-
-bool serviceInit() {
-    return (servicesInitialized = srvInit() == 0 && aptInit() == 0);
-}
 
 void serviceCleanup() {
-    if(!servicesInitialized) {
-        return;
-    }
-
     for(std::map<std::string, std::function<void()>>::iterator it = services.begin(); it != services.end(); it++) {
         if((*it).second != NULL) {
             (*it).second();
@@ -74,15 +46,9 @@ void serviceCleanup() {
     }
 
     services.clear();
-    aptExit();
-    srvExit();
 }
 
 bool serviceRequire(const std::string service) {
-    if(!servicesInitialized) {
-        return false;
-    }
-
     if(services.find(service) != services.end()) {
         return true;
     }
@@ -90,15 +56,8 @@ bool serviceRequire(const std::string service) {
     Result result = 0;
     std::function<void()> cleanup = NULL;
     if(service.compare("gfx") == 0) {
-        gfxInitDefault();
-        result = 0;
+        result = (gfxInitDefault(), 0);
         cleanup = &gfxExit;
-    } else if(service.compare("hid") == 0) {
-        result = hidInit(NULL);
-        cleanup = &hidExit;
-    } else if(service.compare("fs") == 0) {
-        result = fullFsInit();
-        cleanup = &fullFsExit;
     } else if(service.compare("am") == 0) {
         result = amInit();
         cleanup = &amExit;
@@ -111,10 +70,6 @@ bool serviceRequire(const std::string service) {
     } else if(service.compare("csnd") == 0) {
         result = csndInit();
         cleanup = &csndExit;
-    } else if(service.compare("console") == 0) {
-        consoleDebugInit(debugDevice_3DMOO);
-        result = 0;
-        cleanup = NULL;
     }
 
     if(result == 0) {

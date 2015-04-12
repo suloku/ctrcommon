@@ -18,11 +18,12 @@ include $(DEVKITARM)/base_rules
 TARGET		:=	ctrcommon
 BUILD		:=	build
 SOURCES		:=	source \
-			source/ctrcommon
+			source/ctrcommon \
+			source/libkhax \
+			source/servicepatch
 
 DATA		:=	data
-INCLUDES	:=	include \
-			include/ctrcommon
+INCLUDES	:=	include
 
 #---------------------------------------------------------------------------------
 # options for code generation

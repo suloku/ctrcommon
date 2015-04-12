@@ -14,6 +14,7 @@
 #include <iomanip>
 #include <sstream>
 #include <stack>
+#include <ctrcommon/fs.hpp>
 
 struct uiAlphabetize {
     inline bool operator()(SelectableElement a, SelectableElement b) {
@@ -160,43 +161,26 @@ void uiGetDirContents(std::vector<SelectableElement> &elements, const std::strin
     elements.push_back({".", "."});
     elements.push_back({"..", ".."});
 
-    bool hasSlash = directory.size() != 0 && directory[directory.size() - 1] == '/';
-    const std::string dirWithSlash = hasSlash ? directory : directory + "/";
-
-    DIR* dir = opendir(dirWithSlash.c_str());
-    if(dir == NULL) {
-        return;
-    }
-
-    while(true) {
-        struct dirent* ent = readdir(dir);
-        if(ent == NULL) {
-            break;
-        }
-
-        const std::string dirName = std::string(ent->d_name);
-        const std::string path = dirWithSlash + dirName;
+    std::vector<FileInfo> contents = fsGetDirectoryContents(directory);
+    for(std::vector<FileInfo>::iterator it = contents.begin(); it != contents.end(); it++) {
+        const std::string name = (*it).name;
+        const std::string path = (*it).path;
         if(fsIsDirectory(path)) {
-            elements.push_back({path, dirName});
-        } else {
-            std::string::size_type dotPos = path.rfind('.');
-            if(extensions.empty() || (dotPos != std::string::npos && std::find(extensions.begin(), extensions.end(), path.substr(dotPos + 1)) != extensions.end())) {
-                struct stat st;
-                stat(path.c_str(), &st);
+            elements.push_back({path, name});
+        } else if(fsHasExtensions(path, extensions)) {
+            struct stat st;
+            stat(path.c_str(), &st);
 
-                std::vector<std::string> info;
-                std::stringstream stream;
-                stream << "File Size: " << ((u32) st.st_size) << " bytes (" << std::fixed << std::setprecision(2) << ((u32) st.st_size) / 1024.0f / 1024.0f << "MB)";
-                info.push_back(stream.str());
-                elements.push_back({path, dirName, info});
-            }
+            std::vector<std::string> info;
+            std::stringstream stream;
+            stream << "File Size: " << ((u32) st.st_size) << " bytes (" << std::fixed << std::setprecision(2) << ((u32) st.st_size) / 1024.0f / 1024.0f << "MB)";
+            info.push_back(stream.str());
+            elements.push_back({path, name, info});
         }
     }
-
-    closedir(dir);
 }
 
-bool uiSelectFile(std::string* selectedFile, const std::string rootDirectory, std::vector<std::string> extensions, std::function<bool(bool inRoot)> onLoop, std::function<bool(std::string path, bool &updateList)> onSelect, bool useTopScreen) {
+bool uiSelectFile(std::string* selectedFile, const std::string rootDirectory, std::vector<std::string> extensions, std::function<bool(const std::string currDirectory, bool inRoot, bool &updateList)> onLoop, std::function<bool(const std::string path, bool &updateList)> onSelect, bool useTopScreen) {
     std::stack<std::string> directoryStack;
     std::string currDirectory = rootDirectory;
 
@@ -207,7 +191,7 @@ bool uiSelectFile(std::string* selectedFile, const std::string rootDirectory, st
     bool resetCursor = true;
     SelectableElement selected;
     bool result = uiSelect(&selected, elements, [&](std::vector<SelectableElement> &currElements, bool &elementsDirty, bool &resetCursorIfDirty) {
-        if(onLoop != NULL && onLoop(directoryStack.empty())) {
+        if(onLoop != NULL && onLoop(currDirectory, directoryStack.empty(), updateContents)) {
             return true;
         }
 
@@ -299,7 +283,7 @@ bool uiFindApp(App* result, std::string id, std::vector<App> apps) {
     return false;
 }
 
-bool uiSelectApp(App* selectedApp, MediaType mediaType, std::function<bool()> onLoop, std::function<bool(App app, bool &updateList)> onSelect, bool useTopScreen) {
+bool uiSelectApp(App* selectedApp, MediaType mediaType, std::function<bool(bool &updateList)> onLoop, std::function<bool(App app, bool &updateList)> onSelect, bool useTopScreen) {
     std::vector<SelectableElement> elements;
 
     std::vector<App> apps = appList(mediaType);
@@ -308,6 +292,10 @@ bool uiSelectApp(App* selectedApp, MediaType mediaType, std::function<bool()> on
     bool updateContents = false;
     SelectableElement selected;
     bool result = uiSelect(&selected, elements, [&](std::vector<SelectableElement> &currElements, bool &elementsDirty, bool &resetCursorIfDirty) {
+        if(onLoop != NULL && onLoop(updateContents)) {
+            return true;
+        }
+
         if(updateContents) {
             apps = appList(mediaType);
             uiGetApps(currElements, apps);
@@ -316,7 +304,7 @@ bool uiSelectApp(App* selectedApp, MediaType mediaType, std::function<bool()> on
             updateContents = false;
         }
 
-        return onLoop != NULL && onLoop();
+        return false;
     }, [&](SelectableElement select) {
         if(select.name.compare("None") != 0) {
             App app;

@@ -1,5 +1,7 @@
 #include "ctrcommon/gpu.hpp"
 
+#include "service.hpp"
+
 #include <malloc.h>
 #include <string.h>
 
@@ -127,7 +129,11 @@ TexEnv texEnv[TEX_ENV_COUNT];
 TextureData* activeTextures[TEX_UNIT_COUNT];
 u32 enabledTextures;
 
-void gpuInit() {
+bool gpuInit() {
+    if(!serviceRequire("gfx")) {
+        return false;
+    }
+
     dirtyState = 0xFFFFFFFF;
     dirtyTexEnvs = 0xFFFFFFFF;
     dirtyTextures = 0xFFFFFFFF;
@@ -211,6 +217,7 @@ void gpuInit() {
     GPU_Init(NULL);
     GPU_Reset(NULL, gpuCmd, gpuCmdSize);
     GPUCMD_SetBufferOffset(0);
+    return true;
 }
 
 void gpuUpdateState() {

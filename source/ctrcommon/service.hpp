@@ -6,7 +6,6 @@
 
 #include <string>
 
-bool serviceInit();
 void serviceCleanup();
 bool serviceRequire(const std::string service);
 Error serviceParseError(u32 error);

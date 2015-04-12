@@ -142,7 +142,7 @@ typedef enum {
     SCISSOR_NORMAL = 0x3
 } ScissorMode;
 
-void gpuInit();
+bool gpuInit();
 
 void gpuFlush();
 void gpuSwapBuffers(bool vblank);

@@ -6,6 +6,12 @@
 #include <string>
 
 typedef enum {
+    ACQUIRE_SUCCESS,
+    ACQUIRE_KHAX_FAILED,
+    ACQUIRE_PATCH_FAILED
+} AcquireResult;
+
+typedef enum {
     MODULE_COMMON = 0,
     MODULE_KERNEL = 1,
     MODULE_UTIL = 2,
@@ -188,6 +194,8 @@ bool platformInit();
 void platformCleanup();
 bool platformIsRunning();
 bool platformIsNinjhax();
+AcquireResult platformAcquireServices();
+std::string platformGetAcquireResultString(AcquireResult result);
 u32 platformGetDeviceId();
 u64 platformGetTime();
 void platformDelay(int ms);
