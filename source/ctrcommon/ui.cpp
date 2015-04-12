@@ -262,6 +262,7 @@ bool uiSelectFile(std::string* selectedFile, const std::string rootDirectory, st
 }
 
 void uiGetApps(std::vector<SelectableElement> &elements, std::vector<App> apps) {
+    elements.clear();
     for(std::vector<App>::iterator it = apps.begin(); it != apps.end(); it++) {
         App app = *it;
 
