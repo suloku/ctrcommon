@@ -39,6 +39,15 @@ bool platformIsNinjhax() {
     return result == 0;
 }
 
+KernelResult platformExecuteKernel(s32 (*func)()) {
+    if(!serviceRequire("kernel")) {
+        return KERNEL_ACQUIRE_FAILED;
+    }
+
+    svcBackdoor(func);
+    return KERNEL_SUCCESS;
+}
+
 s32 platformPatchPid() {
     *(u32*)(curr_kproc_addr + kproc_pid_offset) = 0;
     return 0;
@@ -49,11 +58,9 @@ s32 platformUnpatchPid() {
     return 0;
 }
 
-AcquireResult platformAcquireServices() {
-    Result khaxResult = khaxInit();
-    if(khaxResult != 0) {
-        errno = khaxResult;
-        return ACQUIRE_KHAX_FAILED;
+KernelResult platformAcquireServices() {
+    if(!serviceRequire("kernel")) {
+        return KERNEL_ACQUIRE_FAILED;
     }
 
     SaveVersionConstants();
@@ -68,23 +75,23 @@ AcquireResult platformAcquireServices() {
     svcGetProcessId(&newPid, 0xFFFF8001);
     svcBackdoor(platformUnpatchPid);
     if(newPid != 0) {
-        return ACQUIRE_PATCH_FAILED;
+        return KERNEL_OPERATION_FAILED;
     }
 
-    return ACQUIRE_SUCCESS;
+    return KERNEL_SUCCESS;
 }
 
-std::string platformGetAcquireResultString(AcquireResult result) {
+std::string platformGetKernelResultString(KernelResult result) {
     std::stringstream str;
     switch(result) {
-        case ACQUIRE_SUCCESS:
-            str << "Successfully acquired services.";
+        case KERNEL_SUCCESS:
+            str << "Successfully performed kernel operation.";
             break;
-        case ACQUIRE_KHAX_FAILED:
-            str << "Failed to execute libkhax: " << errno;
+        case KERNEL_ACQUIRE_FAILED:
+            str << "Failed to acquire kernel access: " << platformGetErrorString(platformGetError());
             break;
-        case ACQUIRE_PATCH_FAILED:
-            str << "Failed to patch service access.";
+        case KERNEL_OPERATION_FAILED:
+            str << "Kernel operation failed.";
             break;
         default:
             str << "Unknown result.";

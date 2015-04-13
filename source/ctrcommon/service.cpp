@@ -1,5 +1,7 @@
 #include "service.hpp"
 
+#include "../libkhax/khax.h"
+
 #include <malloc.h>
 #include <stdio.h>
 
@@ -70,6 +72,9 @@ bool serviceRequire(const std::string service) {
     } else if(service.compare("csnd") == 0) {
         result = csndInit();
         cleanup = &csndExit;
+    } else if(service.compare("kernel") == 0) {
+        result = khaxInit();
+        cleanup = NULL;
     }
 
     if(result == 0) {

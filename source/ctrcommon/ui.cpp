@@ -380,8 +380,8 @@ bool uiPrompt(Screen screen, const std::string message, bool question) {
 void uiDisplayProgress(Screen screen, const std::string operation, const std::string details, bool quickSwap, u32 progress) {
     std::stringstream stream;
     stream << operation << ": [";
-    int progressBars = progress / 4;
-    for(int i = 0; i < 25; i++) {
+    u32 progressBars = progress / 4;
+    for(u32 i = 0; i < 25; i++) {
         if(i < progressBars) {
             stream << '|';
         } else {
