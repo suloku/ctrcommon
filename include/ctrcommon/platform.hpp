@@ -6,12 +6,6 @@
 #include <string>
 
 typedef enum {
-    KERNEL_SUCCESS,
-    KERNEL_ACQUIRE_FAILED,
-    KERNEL_OPERATION_FAILED
-} KernelResult;
-
-typedef enum {
     MODULE_COMMON = 0,
     MODULE_KERNEL = 1,
     MODULE_UTIL = 2,
@@ -194,9 +188,7 @@ bool platformInit();
 void platformCleanup();
 bool platformIsRunning();
 bool platformIsNinjhax();
-KernelResult platformExecuteKernel(s32 (*func)());
-KernelResult platformAcquireServices();
-std::string platformGetKernelResultString(KernelResult result);
+bool platformExecuteKernel(s32 (*func)());
 u32 platformGetDeviceId();
 u64 platformGetTime();
 void platformDelay(int ms);

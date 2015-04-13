@@ -14,8 +14,6 @@
 
 #include <3ds.h>
 
-static u32 selfPid = 0;
-
 static Error* currentError;
 
 bool platformInit() {
@@ -39,66 +37,13 @@ bool platformIsNinjhax() {
     return result == 0;
 }
 
-KernelResult platformExecuteKernel(s32 (*func)()) {
+bool platformExecuteKernel(s32 (*func)()) {
     if(!serviceRequire("kernel")) {
-        return KERNEL_ACQUIRE_FAILED;
+        return false;
     }
 
     svcBackdoor(func);
-    return KERNEL_SUCCESS;
-}
-
-s32 platformPatchPid() {
-    *(u32*)(curr_kproc_addr + kproc_pid_offset) = 0;
-    return 0;
-}
-
-s32 platformUnpatchPid() {
-    *(u32*)(curr_kproc_addr + kproc_pid_offset) = selfPid;
-    return 0;
-}
-
-KernelResult platformAcquireServices() {
-    if(!serviceRequire("kernel")) {
-        return KERNEL_ACQUIRE_FAILED;
-    }
-
-    SaveVersionConstants();
-
-    svcGetProcessId(&selfPid, 0xFFFF8001);
-    svcBackdoor(platformPatchPid);
-
-    srvExit();
-    srvInit();
-
-    u32 newPid;
-    svcGetProcessId(&newPid, 0xFFFF8001);
-    svcBackdoor(platformUnpatchPid);
-    if(newPid != 0) {
-        return KERNEL_OPERATION_FAILED;
-    }
-
-    return KERNEL_SUCCESS;
-}
-
-std::string platformGetKernelResultString(KernelResult result) {
-    std::stringstream str;
-    switch(result) {
-        case KERNEL_SUCCESS:
-            str << "Successfully performed kernel operation.";
-            break;
-        case KERNEL_ACQUIRE_FAILED:
-            str << "Failed to acquire kernel access: " << platformGetErrorString(platformGetError());
-            break;
-        case KERNEL_OPERATION_FAILED:
-            str << "Kernel operation failed.";
-            break;
-        default:
-            str << "Unknown result.";
-            break;
-    }
-
-    return str.str();
+    return true;
 }
 
 u32 platformGetDeviceId() {
