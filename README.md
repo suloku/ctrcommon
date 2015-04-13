@@ -1,4 +1,4 @@
-<b><center><h1>ctrcommon</h></center></b>
+<b><center>ctrcommon</center></b>
 ==========
 
 Common utilities for use in 3DS homebrew.
