@@ -25,7 +25,7 @@ bool uiSelectFile(std::string* selectedFile, const std::string rootDirectory, st
 bool uiSelectApp(App* selectedApp, MediaType mediaType, std::function<bool(bool &updateList)> onLoop, std::function<bool(App app, bool &updateList)> onSelect, bool useTopScreen = true);
 void uiDisplayMessage(Screen screen, const std::string message);
 bool uiPrompt(Screen screen, const std::string message, bool question);
-void uiDisplayProgress(Screen screen, const std::string operation, const std::string details, bool quickSwap, int progress);
+void uiDisplayProgress(Screen screen, const std::string operation, const std::string details, bool quickSwap, u32 progress);
 RemoteFile uiAcceptRemoteFile(Screen screen);
 
 #endif

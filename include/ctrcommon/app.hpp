@@ -52,8 +52,8 @@ const std::string appGetResultString(AppResult result);
 const std::string appGetPlatformName(AppPlatform platform);
 const std::string appGetCategoryName(AppCategory category);
 std::vector<App> appList(MediaType mediaType);
-AppResult appInstallFile(MediaType mediaType, const std::string path, std::function<bool(int progress)> onProgress);
-AppResult appInstall(MediaType mediaType, FILE* fd, u64 size, std::function<bool(int progress)> onProgress);
+AppResult appInstallFile(MediaType mediaType, const std::string path, std::function<bool(u64 pos, u64 totalSize)> onProgress);
+AppResult appInstall(MediaType mediaType, FILE* fd, u64 size, std::function<bool(u64 pos, u64 totalSize)> onProgress);
 AppResult appDelete(App app);
 AppResult appLaunch(App app);
 

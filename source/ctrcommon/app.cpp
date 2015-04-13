@@ -152,7 +152,7 @@ std::vector<App> appList(MediaType mediaType) {
     return titles;
 }
 
-AppResult appInstallFile(MediaType mediaType, const std::string path, std::function<bool(int progress)> onProgress) {
+AppResult appInstallFile(MediaType mediaType, const std::string path, std::function<bool(u64 pos, u64 totalSize)> onProgress) {
     if(!serviceRequire("am")) {
         return APP_AM_INIT_FAILED;
     }
@@ -172,13 +172,13 @@ AppResult appInstallFile(MediaType mediaType, const std::string path, std::funct
     return ret;
 }
 
-AppResult appInstall(MediaType mediaType, FILE* fd, u64 size, std::function<bool(int progress)> onProgress) {
+AppResult appInstall(MediaType mediaType, FILE* fd, u64 size, std::function<bool(u64 pos, u64 totalSize)> onProgress) {
     if(!serviceRequire("am")) {
         return APP_AM_INIT_FAILED;
     }
 
     if(onProgress != NULL) {
-        onProgress(0);
+        onProgress(0, 0);
     }
 
     Handle ciaHandle;
@@ -193,7 +193,7 @@ AppResult appInstall(MediaType mediaType, FILE* fd, u64 size, std::function<bool
     bool cancelled = false;
     u64 pos = 0;
     while(platformIsRunning()) {
-        if(onProgress != NULL && !onProgress(size != 0 ? (int) ((pos / (float) size) * 100) : 0)) {
+        if(onProgress != NULL && !onProgress(pos, size)) {
             AM_CancelCIAInstall(&ciaHandle);
             cancelled = true;
             break;
@@ -233,7 +233,7 @@ AppResult appInstall(MediaType mediaType, FILE* fd, u64 size, std::function<bool
     }
 
     if(onProgress != NULL) {
-        onProgress(100);
+        onProgress(size, size);
     }
 
     Result finishResult = AM_FinishCiaInstall(appMediatypeToByte(mediaType), &ciaHandle);

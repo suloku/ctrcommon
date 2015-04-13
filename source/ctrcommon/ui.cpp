@@ -377,7 +377,7 @@ bool uiPrompt(Screen screen, const std::string message, bool question) {
     return result;
 }
 
-void uiDisplayProgress(Screen screen, const std::string operation, const std::string details, bool quickSwap, int progress) {
+void uiDisplayProgress(Screen screen, const std::string operation, const std::string details, bool quickSwap, u32 progress) {
     std::stringstream stream;
     stream << operation << ": [";
     int progressBars = progress / 4;

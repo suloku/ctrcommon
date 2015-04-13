@@ -65,7 +65,7 @@ int socketListen(u16 port) {
     return fd;
 }
 
-FILE*socketAccept(int listeningSocket) {
+FILE* socketAccept(int listeningSocket) {
     if(!serviceRequire("soc")) {
         return NULL;
     }
@@ -87,7 +87,7 @@ FILE*socketAccept(int listeningSocket) {
     return fdopen(afd, "rw");
 }
 
-FILE*socketConnect(const std::string ipAddress, u16 port) {
+FILE* socketConnect(const std::string ipAddress, u16 port) {
     if(!serviceRequire("soc")) {
         return NULL;
     }
