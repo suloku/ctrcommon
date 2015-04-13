@@ -164,7 +164,7 @@ AppResult appInstallFile(MediaType mediaType, const std::string path, std::funct
 
     struct stat st;
     stat(path.c_str(), &st);
-    u64 size = (u64) st.st_size;
+    u64 size = (u64) (u32) st.st_size;
 
     AppResult ret = appInstall(mediaType, fd, size, onProgress);
 
