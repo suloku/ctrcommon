@@ -13,6 +13,7 @@
 #include <sstream>
 
 #include <3ds.h>
+#include <ctrcommon/app.hpp>
 
 u8 appMediatypeToByte(MediaType mediaType) {
     return mediaType == NAND ? mediatype_NAND : mediatype_SDMC;
@@ -260,15 +261,24 @@ AppResult appDelete(App app) {
 }
 
 AppResult appLaunch(App app) {
-    if(!serviceRequire("ns")) {
-        return APP_NS_INIT_FAILED;
-    }
+    u8 buf0[0x300];
+    u8 buf1[0x20];
 
-    Result res = NS_RebootToTitle(app.mediaType, app.titleId);
-    if(res != 0) {
-        platformSetError(serviceParseError((u32) res));
+    aptOpenSession();
+    Result prepareResult = APT_PrepareToDoAppJump(NULL, 0, app.titleId, appMediatypeToByte(app.mediaType));
+    if(prepareResult != 0) {
+        aptCloseSession();
+        platformSetError(serviceParseError((u32) prepareResult));
         return APP_LAUNCH_FAILED;
     }
 
+    Result doResult = APT_DoAppJump(NULL, 0x300, 0x20, buf0, buf1);
+    if(doResult != 0) {
+        aptCloseSession();
+        platformSetError(serviceParseError((u32) doResult));
+        return APP_LAUNCH_FAILED;
+    }
+
+    aptCloseSession();
     return APP_SUCCESS;
 }

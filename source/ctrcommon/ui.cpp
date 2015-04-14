@@ -23,8 +23,8 @@ struct uiAlphabetize {
 };
 
 bool uiSelect(SelectableElement* selected, std::vector<SelectableElement> elements, std::function<bool(std::vector<SelectableElement> &currElements, bool &elementsDirty, bool &resetCursorIfDirty)> onLoop, std::function<bool(SelectableElement select)> onSelect, bool useTopScreen, bool alphabetize) {
-    u32 cursor = 0;
-    u32 scroll = 0;
+    int cursor = 0;
+    int scroll = 0;
 
     u32 selectionScroll = 0;
     u64 selectionScrollEndTime = 0;
@@ -40,25 +40,38 @@ bool uiSelect(SelectableElement* selected, std::vector<SelectableElement> elemen
     while(platformIsRunning()) {
         inputPoll();
         if(inputIsPressed(BUTTON_A)) {
-            SelectableElement select = elements.at(cursor);
+            SelectableElement select = elements.at((u32) cursor);
             if(onSelect == NULL || onSelect(select)) {
                 *selected = select;
                 return true;
             }
         }
 
-        if(inputIsHeld(BUTTON_DOWN) || inputIsHeld(BUTTON_UP)) {
+        if(inputIsHeld(BUTTON_DOWN) || inputIsHeld(BUTTON_UP) || inputIsHeld(BUTTON_LEFT) || inputIsHeld(BUTTON_RIGHT)) {
             if(lastScrollTime == 0 || platformGetTime() - lastScrollTime >= 180) {
-                if(inputIsHeld(BUTTON_DOWN) && cursor < elements.size() - 1) {
+                if(inputIsHeld(BUTTON_DOWN) && cursor < (int) elements.size() - 1) {
                     cursor++;
                     if(cursor >= scroll + 20) {
                         scroll++;
                     }
+                }
 
-                    selectionScroll = 0;
-                    selectionScrollEndTime = 0;
+                if(inputIsHeld(BUTTON_RIGHT) && cursor < (int) elements.size() - 1) {
+                    cursor += 20;
+                    if(cursor >= (int) elements.size()) {
+                        cursor = elements.size() - 1;
+                        if(cursor < 0) {
+                            cursor = 0;
+                        }
+                    }
 
-                    lastScrollTime = platformGetTime();
+                    scroll += 20;
+                    if(scroll >= (int) elements.size() - 20) {
+                        scroll = elements.size() - 21;
+                        if(scroll < 0) {
+                            scroll = 0;
+                        }
+                    }
                 }
 
                 if(inputIsHeld(BUTTON_UP) && cursor > 0) {
@@ -66,12 +79,24 @@ bool uiSelect(SelectableElement* selected, std::vector<SelectableElement> elemen
                     if(cursor < scroll) {
                         scroll--;
                     }
-
-                    selectionScroll = 0;
-                    selectionScrollEndTime = 0;
-
-                    lastScrollTime = platformGetTime();
                 }
+
+                if(inputIsHeld(BUTTON_LEFT) && cursor > 0) {
+                    cursor -= 20;
+                    if(cursor < 0) {
+                        cursor = 0;
+                    }
+
+                    scroll -= 20;
+                    if(scroll < 0) {
+                        scroll = 0;
+                    }
+                }
+
+                selectionScroll = 0;
+                selectionScrollEndTime = 0;
+
+                lastScrollTime = platformGetTime();
             }
         } else {
             lastScrollTime = 0;
@@ -83,12 +108,12 @@ bool uiSelect(SelectableElement* selected, std::vector<SelectableElement> elemen
         u16 screenWidth = screenGetWidth();
         for(std::vector<SelectableElement>::iterator it = elements.begin() + scroll; it != elements.begin() + scroll + 20 && it != elements.end(); it++) {
             SelectableElement element = *it;
-            u32 index = (u32) (it - elements.begin());
+            int index = it - elements.begin();
             u8 color = 255;
             int offset = 0;
             if(index == cursor) {
                 color = 0;
-                screenFill(0, (int) (index - scroll) * 12 - 2, screenWidth, (u16) (screenGetStrHeight(element.name) + 4), 255, 255, 255);
+                screenFill(0, (index - scroll) * 12 - 2, screenWidth, (u16) (screenGetStrHeight(element.name) + 4), 255, 255, 255);
                 u32 width = (u32) screenGetStrWidth(element.name);
                 if(width > screenWidth) {
                     if(selectionScroll + screenWidth >= width) {
