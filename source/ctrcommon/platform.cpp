@@ -2,7 +2,6 @@
 
 #include "service.hpp"
 #include "../libkhax/khax.h"
-#include "../servicepatch/constants.h"
 
 #include <sys/errno.h>
 #include <malloc.h>

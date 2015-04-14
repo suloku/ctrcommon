@@ -1,7 +1,6 @@
 #include "service.hpp"
 
 #include "../libkhax/khax.h"
-#include "../servicepatch/constants.h"
 
 #include <malloc.h>
 #include <stdio.h>
@@ -39,41 +38,6 @@ void socCleanup() {
     }
 }
 
-static bool acquiredServices = false;
-static u32 selfPid = 0;
-
-s32 servicePatchPid() {
-    *(u32*)(curr_kproc_addr + kproc_pid_offset) = 0;
-    return 0;
-}
-
-s32 serviceUnpatchPid() {
-    *(u32*)(curr_kproc_addr + kproc_pid_offset) = selfPid;
-    return 0;
-}
-
-bool serviceAcquire() {
-    if(!acquiredServices && serviceRequire("kernel")) {
-        SaveVersionConstants();
-
-        svcGetProcessId(&selfPid, 0xFFFF8001);
-        svcBackdoor(servicePatchPid);
-
-        srvExit();
-        srvInit();
-
-        u32 newPid;
-        svcGetProcessId(&newPid, 0xFFFF8001);
-        svcBackdoor(serviceUnpatchPid);
-
-        if(newPid == 0) {
-            acquiredServices = true;
-        }
-    }
-
-    return acquiredServices;
-}
-
 static std::map<std::string, std::function<void()>> services;
 
 void serviceCleanup() {
@@ -106,13 +70,10 @@ bool serviceRequire(const std::string service) {
         result = khaxInit();
         cleanup = NULL;
     } else {
-        if(!platformIsNinjhax() || serviceAcquire()) {
+        if(!platformIsNinjhax() || serviceRequire("kernel")) {
             if(service.compare("am") == 0) {
                 result = amInit();
                 cleanup = &amExit;
-            } else if(service.compare("ns") == 0) {
-                result = nsInit();
-                cleanup = &nsExit;
             }
         } else {
             return false;

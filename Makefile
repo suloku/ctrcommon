@@ -34,7 +34,7 @@ CFLAGS	:=	-g -Wall -Wno-strict-aliasing -O3 -mword-relocations \
 			-fomit-frame-pointer -ffast-math \
 			$(ARCH)
 
-CFLAGS	+=	$(INCLUDE) -DARM11 -D_3DS
+CFLAGS	+=	$(INCLUDE) -DARM11 -D_3DS -DLIBKHAX_AS_LIB
 
 CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
 
@@ -128,10 +128,16 @@ else
 
 DEPENDS	:=	$(OFILES:.o=.d)
 
+BUILD: submodules $(OUTPUT)
+
 #---------------------------------------------------------------------------------
 # main targets
 #---------------------------------------------------------------------------------
 $(OUTPUT)	:	$(OFILES)
+
+submodules:
+	@git submodule init
+	@git submodule foreach git pull
 
 #---------------------------------------------------------------------------------
 %.bin.o	:	%.bin

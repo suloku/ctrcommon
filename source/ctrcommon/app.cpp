@@ -58,8 +58,6 @@ const std::string appGetResultString(AppResult result) {
         resultMsg << "Operation cancelled.";
     } else if(result == APP_AM_INIT_FAILED) {
         resultMsg << "Could not initialize AM service.";
-    } else if(result == APP_NS_INIT_FAILED) {
-        resultMsg << "Could not initialize NS service.";
     } else if(result == APP_IO_ERROR) {
         resultMsg << "I/O Error." << "\n" << strerror(errno);
     } else if(result == APP_OPEN_FILE_FAILED) {
