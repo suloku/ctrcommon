@@ -18,7 +18,7 @@ typedef enum {
 // TODO: verify categories.
 typedef enum {
     APP,
-    DLC,
+    DEMO,
     PATCH,
     SYSTEM,
     TWL

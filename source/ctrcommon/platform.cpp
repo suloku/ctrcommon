@@ -3,7 +3,6 @@
 #include "service.hpp"
 #include "../libkhax/khax.h"
 
-#include <sys/errno.h>
 #include <malloc.h>
 #include <stdarg.h>
 #include <stdio.h>

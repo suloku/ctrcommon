@@ -4,7 +4,6 @@
 
 #include <sys/errno.h>
 #include <sys/stat.h>
-#include <sys/unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -13,7 +12,6 @@
 #include <sstream>
 
 #include <3ds.h>
-#include <ctrcommon/app.hpp>
 
 u8 appMediatypeToByte(MediaType mediaType) {
     return mediaType == NAND ? mediatype_NAND : mediatype_SDMC;
@@ -35,13 +33,13 @@ AppPlatform appPlatformFromId(u16 id) {
 }
 
 AppCategory appCategoryFromId(u16 id) {
-    if((id & 0x2) == 0x2) {
-        return DLC;
-    } else if((id & 0x6) == 0x6) {
+    if(id & 0x2) {
+        return DEMO;
+    } else if(id & 0x6) {
         return PATCH;
-    } else if((id & 0x10) == 0x10) {
+    } else if(id & 0x10) {
         return SYSTEM;
-    } else if((id & 0x8000) == 0x8000) {
+    } else if(id & 0x8000) {
         return TWL;
     }
 
@@ -98,8 +96,8 @@ const std::string appGetCategoryName(AppCategory category) {
     switch(category) {
         case APP:
             return "App";
-        case DLC:
-            return "DLC";
+        case DEMO:
+            return "Demo";
         case PATCH:
             return "Patch";
         case SYSTEM:
