@@ -66,8 +66,8 @@ bool uiSelect(SelectableElement* selected, std::vector<SelectableElement> elemen
                     }
 
                     scroll += 20;
-                    if(scroll >= (int) elements.size() - 20) {
-                        scroll = elements.size() - 21;
+                    if(scroll >= (int) elements.size() - 19) {
+                        scroll = elements.size() - 20;
                         if(scroll < 0) {
                             scroll = 0;
                         }
@@ -131,7 +131,7 @@ bool uiSelect(SelectableElement* selected, std::vector<SelectableElement> elemen
                 offset = -selectionScroll;
             }
 
-            screenDrawString(element.name, offset, (int) (index - scroll) * 12, color, color, color);
+            screenDrawString(element.name, offset, (index - scroll) * 12, color, color, color);
         }
 
         screenEndDraw();
