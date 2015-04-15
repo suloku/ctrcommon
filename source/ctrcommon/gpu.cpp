@@ -317,11 +317,10 @@ void gpuSwapBuffers(bool vblank) {
     GX_SetDisplayTransfer(NULL, gpuFrameBuffer, (viewportHeight << 16) | viewportWidth, fb, (fbHeight << 16) | fbWidth, (PIXEL_RGB8 << 12));
     gpuSafeWait(GSPEVENT_PPF);
 
+    gfxSwapBuffersGpu();
     if(vblank) {
         gpuSafeWait(GSPEVENT_VBlank0);
     }
-
-    gfxSwapBuffersGpu();
 }
 
 void gpuClear() {
