@@ -65,6 +65,10 @@ typedef struct {
     u32 constantColor;
 } TexEnv;
 
+static u32 formatSizes[13] = {
+    4, 3, 2, 2, 2, 2, 2, 1, 1, 1, 1, 4, 4
+};
+
 static u32* gpuFrameBuffer = (u32*) 0x1F119400;
 static u32* gpuDepthBuffer = (u32*) 0x1F370800;
 extern Handle gspEvents[GSPEVENT_MAX];
@@ -699,36 +703,15 @@ void gpuTextureData(u32 texture, const void* data, u32 inWidth, u32 inHeight, Pi
         return;
     }
 
-    u32 size = outWidth * outHeight;
-    switch(outFormat) {
-        case PIXEL_RGBA8:
-        case PIXEL_ETC1:
-        case PIXEL_ETC1A4:
-            size *= 4;
-            break;
-        case PIXEL_RGB8:
-            size *= 3;
-            break;
-        case PIXEL_RGBA5551:
-        case PIXEL_RGB565:
-        case PIXEL_RGBA4:
-        case PIXEL_LA8:
-        case PIXEL_HILO8:
-            size *= 2;
-            break;
-        case PIXEL_L8:
-        case PIXEL_A8:
-        case PIXEL_LA4:
-        case PIXEL_L4:
-            break;
-    }
+    u32 inSize = inWidth * inHeight * formatSizes[inFormat];
+    u32 outSize = outWidth * outHeight * formatSizes[outFormat];
 
-    if(textureData->data == NULL || textureData->size != size) {
+    if(textureData->data == NULL || textureData->size != outSize) {
         if(textureData->data != NULL) {
             linearFree(textureData->data);
         }
 
-        textureData->data = linearMemAlign(size, 0x80);
+        textureData->data = linearMemAlign(outSize, 0x80);
         for(u8 unit = 0; unit < TEX_UNIT_COUNT; unit++) {
             if(activeTextures[unit] == textureData) {
                 dirtyState |= STATE_TEXTURES;
@@ -742,12 +725,13 @@ void gpuTextureData(u32 texture, const void* data, u32 inWidth, u32 inHeight, Pi
         flags |= (1 << 2);
     }
 
+    GSPGPU_FlushDataCache(NULL, (u8*) data, inSize);
     GX_SetDisplayTransfer(NULL, (u32*) data, (inHeight << 16) | inWidth, (u32*) textureData->data, (outHeight << 16) | outWidth, flags);
     gpuSafeWait(GSPEVENT_PPF);
 
     textureData->width = outWidth;
     textureData->height = outHeight;
-    textureData->size = size;
+    textureData->size = outSize;
     textureData->format = outFormat;
     textureData->params = params;
 }
