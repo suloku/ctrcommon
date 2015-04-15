@@ -63,17 +63,26 @@ bool serviceRequire(const std::string service) {
     } else if(service.compare("soc") == 0) {
         result = socInit();
         cleanup = &socCleanup;
-    } else if(service.compare("csnd") == 0) {
-        result = csndInit();
-        cleanup = &csndExit;
     } else if(service.compare("kernel") == 0) {
         result = khaxInit();
         cleanup = &khaxExit;
     } else {
-        if(!platformIsNinjhax() || serviceRequire("kernel")) {
+        bool new3ds = false;
+        if(osGetKernelVersion() >= SYSTEM_VERSION(2, 44, 6)) {
+            u8 isNew3DS = 0;
+            result = APT_CheckNew3DS(NULL, &isNew3DS);
+            if(result == 0) {
+                new3ds = isNew3DS != 0;
+            }
+        }
+
+        if(!platformIsNinjhax() || (service.compare("csnd") == 0 && !new3ds) || serviceRequire("kernel")) {
             if(service.compare("am") == 0) {
                 result = amInit();
                 cleanup = &amExit;
+            } else if(service.compare("csnd") == 0) {
+                result = csndInit();
+                cleanup = &csndExit;
             }
         } else {
             return false;
