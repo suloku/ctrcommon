@@ -360,8 +360,10 @@ std::string platformGetErrorString(Error error) {
             result << "Application";
             break;
         case MODULE_INVALID:
+            result << "Invalid result";
+            break;
         default:
-            result << "Invalid module";
+            result << "Unknown module";
             break;
     }
 
@@ -397,7 +399,7 @@ std::string platformGetErrorString(Error error) {
             result << "Fatal";
             break;
         default:
-            result << "Invalid level";
+            result << "Unknown level";
             break;
     }
 
@@ -442,8 +444,10 @@ std::string platformGetErrorString(Error error) {
             result << "Internal";
             break;
         case SUMMARY_INVALID:
+            result << "Invalid result";
+            break;
         default:
-            result << "Invalid summary";
+            result << "Unknown summary";
             break;
     }
 
@@ -599,8 +603,10 @@ std::string platformGetErrorString(Error error) {
             result << "Timeout";
             break;
         case DESCRIPTION_INVALID:
+            result << "Invalid result";
+            break;
         default:
-            result << "Invalid description";
+            result << "Unknown description";
             break;
     }
 

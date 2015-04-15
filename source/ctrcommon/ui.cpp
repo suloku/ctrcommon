@@ -1,5 +1,7 @@
 #include "ctrcommon/ui.hpp"
 
+#include "ctrcommon/app.hpp"
+#include "ctrcommon/fs.hpp"
 #include "ctrcommon/input.hpp"
 #include "ctrcommon/platform.hpp"
 #include "ctrcommon/socket.hpp"
@@ -14,7 +16,6 @@
 #include <iomanip>
 #include <sstream>
 #include <stack>
-#include <ctrcommon/fs.hpp>
 
 struct uiAlphabetize {
     inline bool operator()(SelectableElement a, SelectableElement b) {
@@ -276,10 +277,16 @@ void uiGetApps(std::vector<SelectableElement> &elements, std::vector<App> apps) 
         App app = *it;
 
         std::stringstream titleId;
-        titleId << std::setfill('0') << std::setw(16) << std::hex << app.titleId;
+        titleId << "0x" << std::setfill('0') << std::setw(16) << std::hex << app.titleId;
 
         std::stringstream uniqueId;
-        uniqueId << std::setfill('0') << std::setw(8) << std::hex << app.uniqueId;
+        uniqueId << "0x" << std::setfill('0') << std::setw(8) << std::hex << app.uniqueId;
+
+        std::stringstream version;
+        version << "0x" << std::setfill('0') << std::hex << app.version;
+
+        std::stringstream size;
+        size << "" << app.size << " bytes (" << std::fixed << std::setprecision(2) << app.size / 1024.0f / 1024.0f << "MB)";
 
         std::vector<std::string> details;
         details.push_back("Title ID: " + titleId.str());
@@ -287,6 +294,8 @@ void uiGetApps(std::vector<SelectableElement> &elements, std::vector<App> apps) 
         details.push_back("Product Code: " + std::string(app.productCode));
         details.push_back("Platform: " + appGetPlatformName(app.platform));
         details.push_back("Category: " + appGetCategoryName(app.category));
+        details.push_back("Version: " + version.str());
+        details.push_back("Size: " + size.str());
 
         elements.push_back({titleId.str(), app.productCode, details});
     }

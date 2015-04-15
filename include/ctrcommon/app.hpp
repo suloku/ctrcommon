@@ -31,6 +31,8 @@ typedef struct {
     MediaType mediaType;
     AppPlatform platform;
     AppCategory category;
+    u16 version;
+    u64 size;
 } App;
 
 typedef enum {

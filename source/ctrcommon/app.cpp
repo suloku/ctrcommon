@@ -123,14 +123,21 @@ std::vector<App> appList(MediaType mediaType) {
     }
 
     u64 titleIds[titleCount];
-    Result titleListResult = AM_GetTitleIdList(appMediatypeToByte(mediaType), titleCount, titleIds);
+    Result titleIdsResult = AM_GetTitleIdList(appMediatypeToByte(mediaType), titleCount, titleIds);
+    if(titleIdsResult != 0) {
+        platformSetError(serviceParseError((u32) titleIdsResult));
+        return titles;
+    }
+
+    TitleList titleList[titleCount];
+    Result titleListResult = AM_ListTitles(appMediatypeToByte(mediaType), titleCount, titleIds, titleList);
     if(titleListResult != 0) {
         platformSetError(serviceParseError((u32) titleListResult));
         return titles;
     }
 
     for(u32 i = 0; i < titleCount; i++) {
-        u64 titleId = titleIds[i];
+        u64 titleId = titleList[i].titleID;
         App app;
         app.titleId = titleId;
         app.uniqueId = ((u32*) &titleId)[0];
@@ -142,6 +149,8 @@ std::vector<App> appList(MediaType mediaType) {
         app.mediaType = mediaType;
         app.platform = appPlatformFromId(((u16 *) &titleId)[3]);
         app.category = appCategoryFromId(((u16 *) &titleId)[2]);
+        app.version = titleList[i].titleVersion;
+        app.size = titleList[i].size;
 
         titles.push_back(app);
     }

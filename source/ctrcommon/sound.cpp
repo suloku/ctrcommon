@@ -12,12 +12,16 @@ void soundFree(void* mem) {
     linearFree(mem);
 }
 
-bool soundPlay(SoundChannel channel, SoundFormat format, u32 sampleRate, void* samples, u32 numSamples) {
+bool soundPlay(u32 channel, SoundFormat format, u32 sampleRate, void* samples, u32 numSamples) {
     if(!serviceRequire("csnd")) {
         return false;
     }
 
-    Result res = csndPlaySound(channel, format | SOUND_ONE_SHOT, sampleRate, samples, samples, numSamples * (format == PCM16 ? 2 : 1));
+    if(channel > 7) {
+        channel = 7;
+    }
+
+    Result res = csndPlaySound((int) (8 + channel), format | SOUND_ONE_SHOT, sampleRate, samples, samples, numSamples * (format == PCM16 ? 2 : 1));
     if(res != 0) {
         platformSetError(serviceParseError((u32) res));
     }

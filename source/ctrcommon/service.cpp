@@ -68,7 +68,7 @@ bool serviceRequire(const std::string service) {
         cleanup = &csndExit;
     } else if(service.compare("kernel") == 0) {
         result = khaxInit();
-        cleanup = NULL;
+        cleanup = &khaxExit;
     } else {
         if(!platformIsNinjhax() || serviceRequire("kernel")) {
             if(service.compare("am") == 0) {
