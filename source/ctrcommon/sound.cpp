@@ -21,6 +21,7 @@ bool soundPlay(u32 channel, SoundFormat format, u32 sampleRate, void* samples, u
         channel = 7;
     }
 
+    GSPGPU_FlushDataCache(NULL, (u8*) samples, numSamples * (format == FORMAT_PCM16 ? 2 : 1));
     Result res = csndPlaySound((int) (8 + channel), format | SOUND_ONE_SHOT, sampleRate, samples, samples, numSamples * (format == FORMAT_PCM16 ? 2 : 1));
     if(res != 0) {
         platformSetError(serviceParseError((u32) res));
