@@ -5,7 +5,9 @@
 #include <3ds.h>
 
 const std::string inputGetButtonName(Button button) {
-    if(button == BUTTON_A) {
+    if(button == BUTTON_NONE) {
+        return "None";
+    } else if(button == BUTTON_A) {
         return "A";
     } else if(button == BUTTON_B) {
         return "B";

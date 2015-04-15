@@ -8,6 +8,7 @@
 #define BIT_SELF_DEFINED
 #endif
 typedef enum {
+    BUTTON_NONE = 0,
     BUTTON_A = BIT(0),
     BUTTON_B = BIT(1),
     BUTTON_SELECT = BIT(2),
