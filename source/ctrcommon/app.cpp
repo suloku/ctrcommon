@@ -20,30 +20,30 @@ u8 appMediatypeToByte(MediaType mediaType) {
 AppPlatform appPlatformFromId(u16 id) {
     switch(id) {
         case 1:
-            return WII;
+            return PLATFORM_WII;
         case 3:
-            return DSI;
+            return PLATFORM_DSI;
         case 4:
-            return THREEDS;
+            return PLATFORM_3DS;
         case 5:
-            return WIIU;
+            return PLATFORM_WIIU;
         default:
-            return UNKNOWN_PLATFORM;
+            return PLATFORM_UNKNOWN;
     }
 }
 
 AppCategory appCategoryFromId(u16 id) {
     if(id & 0x2) {
-        return DEMO;
+        return CATEGORY_DEMO;
     } else if(id & 0x6) {
-        return PATCH;
+        return CATEGORY_PATCH;
     } else if(id & 0x10) {
-        return SYSTEM;
+        return CATEGORY_SYSTEM;
     } else if(id & 0x8000) {
-        return TWL;
+        return CATEGORY_TWL;
     }
 
-    return APP;
+    return CATEGORY_APP;
 }
 
 const std::string appGetResultString(AppResult result) {
@@ -79,13 +79,13 @@ const std::string appGetResultString(AppResult result) {
 
 const std::string appGetPlatformName(AppPlatform platform) {
     switch(platform) {
-        case WII:
+        case PLATFORM_WII:
             return "Wii";
-        case DSI:
+        case PLATFORM_DSI:
             return "DSi";
-        case THREEDS:
+        case PLATFORM_3DS:
             return "3DS";
-        case WIIU:
+        case PLATFORM_WIIU:
             return "Wii U";
         default:
             return "Unknown";
@@ -94,15 +94,15 @@ const std::string appGetPlatformName(AppPlatform platform) {
 
 const std::string appGetCategoryName(AppCategory category) {
     switch(category) {
-        case APP:
+        case CATEGORY_APP:
             return "App";
-        case DEMO:
+        case CATEGORY_DEMO:
             return "Demo";
-        case PATCH:
+        case CATEGORY_PATCH:
             return "Patch";
-        case SYSTEM:
+        case CATEGORY_SYSTEM:
             return "System";
-        case TWL:
+        case CATEGORY_TWL:
             return "TWL";
         default:
             return "Unknown";

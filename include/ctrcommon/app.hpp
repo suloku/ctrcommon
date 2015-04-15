@@ -8,20 +8,20 @@
 #include <vector>
 
 typedef enum {
-    WII,
-    DSI,
-    THREEDS,
-    WIIU,
-    UNKNOWN_PLATFORM
+    PLATFORM_WII,
+    PLATFORM_DSI,
+    PLATFORM_3DS,
+    PLATFORM_WIIU,
+    PLATFORM_UNKNOWN
 } AppPlatform;
 
 // TODO: verify categories.
 typedef enum {
-    APP,
-    DEMO,
-    PATCH,
-    SYSTEM,
-    TWL
+    CATEGORY_APP,
+    CATEGORY_DEMO,
+    CATEGORY_PATCH,
+    CATEGORY_SYSTEM,
+    CATEGORY_TWL
 } AppCategory;
 
 typedef struct {

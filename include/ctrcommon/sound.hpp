@@ -4,8 +4,8 @@
 #include "ctrcommon/types.hpp"
 
 typedef enum {
-    PCM8 = 0,
-    PCM16 = 4096
+    FORMAT_PCM8 = 0,
+    FORMAT_PCM16 = 4096
 } SoundFormat;
 
 void* soundAlloc(u32 size);
