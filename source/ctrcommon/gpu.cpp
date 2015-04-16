@@ -219,6 +219,8 @@ bool gpuInit() {
     GPU_Init(NULL);
     GPU_Reset(NULL, gpuCmd, gpuCmdSize);
     GPUCMD_SetBufferOffset(0);
+
+    gpuClear();
     return true;
 }
 
