@@ -77,10 +77,13 @@ void platformPrintf(const char* format, ...) {
 }
 
 Error platformGetError() {
-    Error error = *currentError;
+    Error error;
     if(currentError != NULL) {
+        error = *currentError;
         free(currentError);
         currentError = NULL;
+    } else {
+        memset(&error, 0, sizeof(Error));
     }
 
     return error;

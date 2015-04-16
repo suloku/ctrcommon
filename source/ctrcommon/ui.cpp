@@ -157,6 +157,16 @@ bool uiSelect(SelectableElement* selected, std::vector<SelectableElement> elemen
             if(resetCursorIfDirty) {
                 cursor = 0;
                 scroll = 0;
+            } else if(cursor >= (int) elements.size()) {
+                cursor = elements.size() - 1;
+                if(cursor < 0) {
+                    cursor = 0;
+                }
+
+                scroll = elements.size() - 20;
+                if(scroll < 0) {
+                    scroll = 0;
+                }
             }
 
             selectionScroll = 0;
