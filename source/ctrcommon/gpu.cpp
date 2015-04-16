@@ -224,6 +224,14 @@ bool gpuInit() {
     return true;
 }
 
+void* gpuAlloc(u32 size) {
+    return linearAlloc(size);
+}
+
+void gpuFree(void* mem) {
+    linearFree(mem);
+}
+
 void gpuUpdateState() {
     u32 dirtyUpdate = dirtyState;
     dirtyState = 0;

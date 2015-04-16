@@ -144,6 +144,9 @@ typedef enum {
 
 bool gpuInit();
 
+void* gpuAlloc(u32 size);
+void gpuFree(void* mem);
+
 void gpuFlush();
 void gpuSwapBuffers(bool vblank);
 
