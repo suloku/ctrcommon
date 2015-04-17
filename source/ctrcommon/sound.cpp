@@ -12,7 +12,7 @@ void soundFree(void* mem) {
     linearFree(mem);
 }
 
-bool soundPlay(u32 channel, SoundFormat format u32 sampleRate, void* samples, u32 numSamples, float volume, float pan) {
+bool soundPlay(u32 channel, SoundFormat format, u32 sampleRate, void* samples, u32 numSamples, float volume, float pan) {
     if(!serviceRequire("csnd")) {
         return false;
     }

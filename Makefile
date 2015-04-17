@@ -137,7 +137,7 @@ $(OUTPUT)	:	$(OFILES)
 
 submodules:
 	@git submodule init
-	@git submodule foreach git pull
+	@git submodule update --recursive
 
 #---------------------------------------------------------------------------------
 %.bin.o	:	%.bin
