@@ -710,6 +710,8 @@ void gpuTextureData(u32 texture, const void* data, u32 inWidth, u32 inHeight, Pi
         return;
     }
 
+    bool dirty = false;
+
     u32 inSize = inWidth * inHeight * formatSizes[inFormat];
     u32 outSize = outWidth * outHeight * formatSizes[outFormat];
 
@@ -719,12 +721,11 @@ void gpuTextureData(u32 texture, const void* data, u32 inWidth, u32 inHeight, Pi
         }
 
         textureData->data = linearMemAlign(outSize, 0x80);
-        for(u8 unit = 0; unit < TEX_UNIT_COUNT; unit++) {
-            if(activeTextures[unit] == textureData) {
-                dirtyState |= STATE_TEXTURES;
-                dirtyTextures |= (1 << unit);
-            }
-        }
+        dirty = true;
+    }
+
+    if(outFormat != textureData->format || params != textureData->params) {
+        dirty = true;
     }
 
     u32 flags = (u32) ((1 << 1) | (inFormat << 8) | (outFormat << 12));
@@ -741,6 +742,15 @@ void gpuTextureData(u32 texture, const void* data, u32 inWidth, u32 inHeight, Pi
     textureData->size = outSize;
     textureData->format = outFormat;
     textureData->params = params;
+
+    if(dirty) {
+        for(u8 unit = 0; unit < TEX_UNIT_COUNT; unit++) {
+            if(activeTextures[unit] == textureData) {
+                dirtyState |= STATE_TEXTURES;
+                dirtyTextures |= (1 << unit);
+            }
+        }
+    }
 }
 
 void gpuBindTexture(TexUnit unit, u32 texture) {
