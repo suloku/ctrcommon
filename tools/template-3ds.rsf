@@ -144,8 +144,6 @@ AccessControlInfo:
    - cam:u
    - cecd:u
    - cfg:u
-   - dlp:FKCL
-   - dlp:SRVR
    - dsp::DSP
    - frd:u
    - fs:USER
@@ -162,6 +160,8 @@ AccessControlInfo:
    - ssl:C
    - y2r:u
    - ldr:ro
+   - ir:rst
+   - ir:u
    - ir:USER
    - am:u
    - csnd:SND
@@ -228,7 +228,7 @@ CommonHeaderKey:
     AP///wAABAACAAAAAAAFGJ4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
     AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAjIAAAAAAAABBUFQ6VQAAACRoaW
     9GSU8AJGhvc3RpbzAkaG9zdGlvMWFjOnUAAAAAYm9zczpVAABjYW06dQAAAGN
-    lY2Q6dQAAY2ZnOnUAAABkbHA6RktDTGRscDpTUlZSZHNwOjpEU1BmcmQ6dQAA
+    lY2Q6dQAAY2ZnOnUAAABpcjpyc3QAAGlyOnUAAAAAZHNwOjpEU1BmcmQ6dQAA
     AGZzOlVTRVIAZ3NwOjpHcHVoaWQ6VVNFUmh0dHA6QwAAbWljOnUAAABuZG06d
     QAAAG5ld3M6dQAAbndtOjpVRFNwdG06dQAAAHB4aTpkZXYAc29jOlUAAABzc2
     w6QwAAAHkycjp1AAAAbGRyOnJvAABpcjpVU0VSAGFtOnUAAAAAY3NuZDpTTkR
