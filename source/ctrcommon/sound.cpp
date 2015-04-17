@@ -12,7 +12,7 @@ void soundFree(void* mem) {
     linearFree(mem);
 }
 
-bool soundPlay(u32 channel, SoundFormat format, u32 sampleRate, void* samples, u32 numSamples) {
+bool soundPlay(u32 channel, SoundFormat format u32 sampleRate, void* samples, u32 numSamples, float volume, float pan) {
     if(!serviceRequire("csnd")) {
         return false;
     }
@@ -22,7 +22,7 @@ bool soundPlay(u32 channel, SoundFormat format, u32 sampleRate, void* samples, u
     }
 
     GSPGPU_FlushDataCache(NULL, (u8*) samples, numSamples * (format == FORMAT_PCM16 ? 2 : 1));
-    Result res = csndPlaySound((int) (8 + channel), format | SOUND_ONE_SHOT, sampleRate, 1, 0, samples, samples, numSamples * (format == FORMAT_PCM16 ? 2 : 1));
+    Result res = csndPlaySound((int) (8 + channel), format | SOUND_ONE_SHOT, sampleRate, volume, pan, samples, samples, numSamples * (format == FORMAT_PCM16 ? 2 : 1));
     if(res != 0) {
         platformSetError(serviceParseError((u32) res));
     }
