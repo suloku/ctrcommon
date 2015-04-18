@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include <3ds.h>
+#include <malloc.h>
 
 static unsigned char asciiData[128][8] = {
         {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
@@ -198,13 +199,13 @@ u32 screenGetIndex(int x, int y) {
     return (u32) (((height - y - 1) + x * height) * 3);
 }
 
-bool screenReadPixels(u8* dest, int srcX, int srcY, int dstX, int dstY, u16 width, u16 height) {
-    if(fb == NULL || srcX + width < 0 || srcY + height < 0 || srcX >= screenGetWidth() || srcY >= screenGetHeight()) {
+bool screenReadPixels(u8* dest, int srcX, int srcY, u16 srcWidth, u16 srcHeight, int dstX, int dstY, u16 dstWidth, u16 dstHeight) {
+    if(fb == NULL || srcX + srcWidth < 0 || srcY + srcHeight < 0 || srcX >= screenGetWidth() || srcY >= screenGetHeight()) {
         return false;
     }
 
-    u16 copyWidth = width;
-    u16 copyHeight = height;
+    u16 copyWidth = srcWidth;
+    u16 copyHeight = srcHeight;
     if(srcX < 0) {
         dstX -= srcX;
         copyWidth += srcX;
@@ -228,7 +229,7 @@ bool screenReadPixels(u8* dest, int srcX, int srcY, int dstX, int dstY, u16 widt
     for(int cx = 0; cx < copyWidth; cx++) {
         for(int cy = 0; cy < copyHeight; cy++) {
             u8* src = fb + screenGetIndex(srcX + cx, srcY + cy);
-            u8* dst = dest + ((dstY + cy) * width + (dstX + cx));
+            u8* dst = dest + (((dstHeight - (dstY + cy) - 1) * dstWidth + (dstX + cx)) * 3);
             dst[0] = src[0];
             dst[1] = src[1];
             dst[2] = src[2];
@@ -245,7 +246,7 @@ bool screenTakeScreenshot() {
     u16 imgHeaderSize = 0x36;
     u32 imgDataSize = imgWidth * imgHeight * imgBytesPerPixel;
 
-    u8 temp[imgHeaderSize + imgDataSize];
+    u8* temp = (u8*) malloc(imgHeaderSize + imgDataSize);
     memset(temp, 0, imgHeaderSize + imgDataSize);
 
     *(u16*) &temp[0x0] = 0x4D42;
@@ -260,22 +261,24 @@ bool screenTakeScreenshot() {
     screenBeginDraw(TOP_SCREEN);
     u16 topWidth = screenGetWidth();
     u16 topHeight = screenGetHeight();
-    screenReadPixels(temp + imgHeaderSize, 0, 0, 0, 0, topWidth, topHeight);
+    screenReadPixels(temp + imgHeaderSize, 0, 0, topWidth, topHeight, 0, 0, imgWidth, imgHeight);
     screenEndDraw();
 
     screenBeginDraw(BOTTOM_SCREEN);
-    screenReadPixels(temp + imgHeaderSize, 0, 0, (imgWidth - screenGetWidth()) / 2, topHeight, screenGetWidth(), screenGetHeight());
+    screenReadPixels(temp + imgHeaderSize, 0, 0, screenGetWidth(), screenGetHeight(), (imgWidth - screenGetWidth()) / 2, topHeight, imgWidth, imgHeight);
     screenEndDraw();
 
     char file[256];
-    snprintf(file, 256, "sdmc:/screenshot_%08d.bmp", (int) (svcGetSystemTick() / 446872));
+    snprintf(file, 256, "sdmc:/screenshot_%llu.bmp", osGetTime());
     FILE* fd = fopen(file, "wb");
     if(!fd) {
+        free(temp);
         return false;
     }
 
     fwrite(temp, 1, imgHeaderSize + imgDataSize, fd);
     fclose(fd);
+    free(temp);
     return true;
 }
 

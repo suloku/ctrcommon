@@ -16,7 +16,7 @@ void screenSwapBuffersQuick();
 void screenSwapBuffers();
 u16 screenGetWidth();
 u16 screenGetHeight();
-bool screenReadPixels(u8* dest, int srcX, int srcY, int dstX, int dstY, u16 width, u16 height);
+bool screenReadPixels(u8* dest, int srcX, int srcY, u16 srcWidth, u16 srcHeight, int dstX, int dstY, u16 dstWidth, u16 dstHeight);
 bool screenTakeScreenshot();
 bool screenDraw(int x, int y, u8 r, u8 g, u8 b);
 bool screenFill(int x, int y, u16 width, u16 height, u8 r, u8 g, u8 b);
