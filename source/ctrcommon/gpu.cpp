@@ -320,13 +320,15 @@ void gpuFlush() {
     GPUCMD_SetBufferOffset(0);
 }
 
-void gpuSwapBuffers(bool vblank) {
+void gpuFlushBuffer() {
     u16 fbWidth;
     u16 fbHeight;
     u32* fb = (u32*) gfxGetFramebuffer(viewportScreen == TOP_SCREEN ? GFX_TOP : GFX_BOTTOM, GFX_LEFT, &fbWidth, &fbHeight);
     GX_SetDisplayTransfer(NULL, gpuFrameBuffer, (viewportHeight << 16) | viewportWidth, fb, (fbHeight << 16) | fbWidth, (PIXEL_RGB8 << 12));
     gpuSafeWait(GSPEVENT_PPF);
+}
 
+void gpuSwapBuffers(bool vblank) {
     gfxSwapBuffersGpu();
     if(vblank) {
         gpuSafeWait(GSPEVENT_VBlank0);

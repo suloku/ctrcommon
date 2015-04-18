@@ -148,6 +148,7 @@ void* gpuAlloc(u32 size);
 void gpuFree(void* mem);
 
 void gpuFlush();
+void gpuFlushBuffer();
 void gpuSwapBuffers(bool vblank);
 
 void gpuClear();
