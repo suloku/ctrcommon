@@ -524,6 +524,8 @@ std::string platformGetErrorString(Error error) {
         case DESCRIPTION_AES_VERIFICATION_FAILED:
             result << "AES verification failed";
             break;
+        case DESCRIPTION_INVALID_DATABASE:
+            result << "Invalid database";
         case DESCRIPTION_SAVE_HASH_CHECK_FAILED:
             result << "Save hash check failed";
             break;
