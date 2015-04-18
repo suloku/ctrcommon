@@ -50,6 +50,18 @@ void serviceCleanup() {
     services.clear();
 }
 
+bool serviceCheckNew3DS() {
+    if(osGetKernelVersion() >= SYSTEM_VERSION(2, 44, 6)) {
+        u8 isNew3DS = 0;
+        Result result = APT_CheckNew3DS(NULL, &isNew3DS);
+        if(result == 0) {
+            return isNew3DS != 0;
+        }
+    }
+
+    return false;
+}
+
 bool serviceRequire(const std::string service) {
     if(services.find(service) != services.end()) {
         return true;
@@ -67,16 +79,7 @@ bool serviceRequire(const std::string service) {
         result = khaxInit();
         cleanup = &khaxExit;
     } else {
-        bool new3ds = false;
-        if(osGetKernelVersion() >= SYSTEM_VERSION(2, 44, 6)) {
-            u8 isNew3DS = 0;
-            result = APT_CheckNew3DS(NULL, &isNew3DS);
-            if(result == 0) {
-                new3ds = isNew3DS != 0;
-            }
-        }
-
-        if(!platformIsNinjhax() || (service.compare("csnd") == 0 && !new3ds) || serviceRequire("kernel")) {
+        if(!platformIsNinjhax() || (service.compare("csnd") == 0 && !serviceCheckNew3DS()) || serviceRequire("kernel")) {
             if(service.compare("am") == 0) {
                 result = amInit();
                 cleanup = &amExit;
