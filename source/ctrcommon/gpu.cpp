@@ -723,10 +723,14 @@ void gpuTextureData(u32 texture, const void* data, u32 inWidth, u32 inHeight, Pi
         }
 
         textureData->data = linearMemAlign(outSize, 0x80);
+        if(textureData->data == NULL) {
+            return;
+        }
+
         dirty = true;
     }
 
-    if(outFormat != textureData->format || params != textureData->params) {
+    if(outFormat != textureData->format || params != textureData->params || outWidth != textureData->width || outHeight != textureData->height) {
         dirty = true;
     }
 
