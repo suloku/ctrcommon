@@ -194,7 +194,6 @@ AccessControlInfo:
    - ssl:C
    - y2r:u
    - csnd:SND
-   - ir:rst
    - am:u
 
 SystemControlInfo:
@@ -264,7 +263,7 @@ CommonHeaderKey:
     lY2Q6dQAAY2ZnOnUAAABkbHA6RktDTGRscDpTUlZSZHNwOjpEU1BmcmQ6dQAA
     AGZzOlVTRVIAZ3NwOjpHcHVoaWQ6VVNFUmh0dHA6QwAAaXI6dQAAAABtaWM6d
     QAAAG5kbTp1AAAAbmV3czp1AABud206OlVEU3B0bTp1AAAAcHhpOmRldgBzb2
-    M6VQAAAHNzbDpDAAAAeTJyOnUAAABjc25kOlNORGlyOnJzdAAAYW06dQAAAAA
+    M6VQAAAHNzbDpDAAAAeTJyOnUAAABjc25kOlNORGFtOnUAAAAAAAAAAAAAAAA
     AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
     AABOn/rw/7//8ec/APIA8JH/APaR/1D/gf9Y/4H/cP+B/3j/gf8BAQD/AAIA/
     iECAPz///////////////////////////////////////////////////////

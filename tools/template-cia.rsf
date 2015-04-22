@@ -194,7 +194,6 @@ AccessControlInfo:
    - ssl:C
    - y2r:u
    - csnd:SND
-   - ir:rst
    - am:u
 
 SystemControlInfo:
