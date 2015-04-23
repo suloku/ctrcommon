@@ -433,11 +433,7 @@ void uiDisplayProgress(Screen screen, const std::string operation, const std::st
         }
     }
 
-    std::ios state(NULL);
-    state.copyfmt(stream);
-    stream << "] " << std::setfill(' ') << std::setw(3) << progress;
-    stream.copyfmt(state);
-    stream << "%" << "\n";
+    stream << "] " << std::setfill(' ') << std::setw(3) << progress << "%" << "\n";
     stream << details << "\n";
 
     std::string str = stream.str();
