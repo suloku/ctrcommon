@@ -197,16 +197,12 @@ AppResult appInstall(MediaType mediaType, FILE* fd, u64 size, std::function<bool
     u32 bufSize = 1024 * 16; // 16KB
     void* buf = malloc(bufSize);
     bool cancelled = false;
-    u32 counter = 0;
     u64 pos = 0;
     while(platformIsRunning()) {
-        if(counter == 4) {
-            counter = 0;
-            if(onProgress != NULL && !onProgress(pos, size)) {
-                AM_CancelCIAInstall(&ciaHandle);
-                cancelled = true;
-                break;
-            }
+        if(onProgress != NULL && !onProgress(pos, size)) {
+            AM_CancelCIAInstall(&ciaHandle);
+            cancelled = true;
+            break;
         }
 
         u64 bytesRead = fread(buf, 1, bufSize, fd);
@@ -223,7 +219,6 @@ AppResult appInstall(MediaType mediaType, FILE* fd, u64 size, std::function<bool
             }
 
             pos += bytesRead;
-            counter++;
         }
     }
 
