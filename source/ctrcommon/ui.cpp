@@ -449,7 +449,7 @@ void uiDisplayProgress(Screen screen, const std::string operation, const std::st
     }
 }
 
-RemoteFile uiAcceptRemoteFile(Screen screen) {
+RemoteFile uiAcceptRemoteFile(Screen screen, std::function<void(std::stringstream& infoStream)> onWait) {
     uiDisplayMessage(screen, "Initializing...");
 
     int listen = socketListen(5000);
@@ -460,11 +460,11 @@ RemoteFile uiAcceptRemoteFile(Screen screen) {
         return {NULL, 0};
     }
 
-    std::stringstream waitStream;
-    waitStream << "Waiting for peer to connect..." << "\n";
-    waitStream << "IP: " << inet_ntoa({socketGetHostIP()}) << "\n";
-    waitStream << "Press B to cancel." << "\n";
-    uiDisplayMessage(screen, waitStream.str());
+    std::stringstream baseInfoStream;
+    baseInfoStream << "Waiting for peer to connect..." << "\n";
+    baseInfoStream << "IP: " << inet_ntoa({socketGetHostIP()}) << "\n";
+    baseInfoStream << "Press B to cancel." << "\n";
+    std::string baseInfo = baseInfoStream.str();
 
     FILE* socket;
     while((socket = socketAccept(listen)) == NULL) {
@@ -481,6 +481,11 @@ RemoteFile uiAcceptRemoteFile(Screen screen) {
                 close(listen);
                 return {NULL, 0};
             }
+
+            std::stringstream infoStream;
+            infoStream << baseInfo;
+            onWait(infoStream);
+            uiDisplayMessage(screen, infoStream.str());
         } else {
             return {NULL, 0};
         }

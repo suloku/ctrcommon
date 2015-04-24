@@ -26,6 +26,6 @@ bool uiSelectApp(App* selectedApp, MediaType mediaType, std::function<bool(bool 
 void uiDisplayMessage(Screen screen, const std::string message);
 bool uiPrompt(Screen screen, const std::string message, bool question);
 void uiDisplayProgress(Screen screen, const std::string operation, const std::string details, bool quickSwap, u32 progress);
-RemoteFile uiAcceptRemoteFile(Screen screen);
+RemoteFile uiAcceptRemoteFile(Screen screen, std::function<void(std::stringstream& infoStream)> onWait = [&](std::stringstream& infoStream){});
 
 #endif
