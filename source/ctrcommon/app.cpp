@@ -194,7 +194,7 @@ AppResult appInstall(MediaType mediaType, FILE* fd, u64 size, std::function<bool
         return APP_BEGIN_INSTALL_FAILED;
     }
 
-    u32 bufSize = 1024 * 16; // 16KB
+    u32 bufSize = 1024 * 128; // 128KB
     void* buf = malloc(bufSize);
     bool cancelled = false;
     u64 pos = 0;
