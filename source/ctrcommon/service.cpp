@@ -38,6 +38,32 @@ void socCleanup() {
     }
 }
 
+static u32* irBuffer;
+
+Result irInit() {
+    irBuffer = (u32*) memalign(0x1000, 0x1000);
+    if(irBuffer == NULL) {
+        return -1;
+    }
+
+    Result irResult = IRU_Initialize(irBuffer, 0x1000);
+    if(irResult != 0) {
+        free(irBuffer);
+        irBuffer = NULL;
+        return irResult;
+    }
+
+    return 0;
+}
+
+void irCleanup() {
+    IRU_Shutdown();
+    if(irBuffer != NULL) {
+        free(irBuffer);
+        irBuffer = NULL;
+    }
+}
+
 static std::map<std::string, std::function<void()>> services;
 
 void serviceCleanup() {
@@ -75,6 +101,9 @@ bool serviceRequire(const std::string service) {
     } else if(service.compare("soc") == 0) {
         result = socInit();
         cleanup = &socCleanup;
+    } else if(service.compare("ir") == 0) {
+        result = irInit();
+        cleanup = &irCleanup;
     } else if(service.compare("kernel") == 0) {
         result = khaxInit();
         cleanup = &khaxExit;
