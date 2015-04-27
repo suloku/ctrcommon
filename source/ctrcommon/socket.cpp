@@ -65,14 +65,20 @@ int socketListen(u16 port) {
     return fd;
 }
 
-FILE* socketAccept(int listeningSocket) {
+FILE* socketAccept(int listeningSocket, std::string* acceptedIp) {
     if(!serviceRequire("soc")) {
         return NULL;
     }
 
-    int afd = accept(listeningSocket, (struct sockaddr*) NULL, NULL);
+    struct sockaddr_in addr;
+    socklen_t addrSize = sizeof(addr);
+    int afd = accept(listeningSocket, (struct sockaddr*) &addr, &addrSize);
     if(afd < 0) {
         return NULL;
+    }
+
+    if(acceptedIp != NULL) {
+        *acceptedIp = inet_ntoa(addr.sin_addr);
     }
 
     int flags = fcntl(afd, F_GETFL);
