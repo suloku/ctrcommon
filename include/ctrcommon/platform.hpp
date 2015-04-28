@@ -194,6 +194,8 @@ u32 platformGetDeviceId();
 u64 platformGetTime();
 void platformDelay(int ms);
 void platformPrintf(const char* format, ...);
+void* platformCreateThread(void(*func)(void* arg), u32 arg, u32 processor);
+void platformExitThread();
 Error platformGetError();
 void platformSetError(Error error);
 std::string platformGetErrorString(Error error);

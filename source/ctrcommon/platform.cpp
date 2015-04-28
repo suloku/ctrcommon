@@ -11,6 +11,7 @@
 #include <sstream>
 
 #include <3ds.h>
+#include <ctrcommon/platform.hpp>
 
 static Error* currentError;
 
@@ -74,6 +75,23 @@ void platformPrintf(const char* format, ...) {
     va_end(args);
 
     svcOutputDebugString(buffer, strlen(buffer));
+}
+
+void* platformCreateThread(void(*func)(void* arg), u32 arg, u32 processor) {
+    void* stack = malloc(0x4000);
+
+    Handle handle;
+    Result res = svcCreateThread(&handle, func, arg, (u32*) ((u8*) stack + 0x4000), 0x18, processor);
+    if(res != 0) {
+        platformSetError(serviceParseError((u32) res));
+        return NULL;
+    }
+
+    return stack;
+}
+
+void platformExitThread() {
+    svcExitThread();
 }
 
 Error platformGetError() {
