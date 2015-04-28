@@ -3,6 +3,8 @@
 #include "service.hpp"
 
 #include <arpa/inet.h>
+#include <sys/errno.h>
+#include <sys/select.h>
 #include <fcntl.h>
 #include <string.h>
 
@@ -46,19 +48,23 @@ int socketListen(u16 port) {
     address.sin_port = htons(port);
 
     if(bind(fd, (struct sockaddr*) &address, sizeof(address)) != 0) {
+        closesocket(fd);
         return -1;
     }
 
     int flags = fcntl(fd, F_GETFL);
     if(flags == -1) {
+        closesocket(fd);
         return -1;
     }
 
     if(fcntl(fd, F_SETFL, flags | O_NONBLOCK) != 0) {
+        closesocket(fd);
         return -1;
     }
 
     if(listen(fd, 10) != 0) {
+        closesocket(fd);
         return -1;
     }
 
@@ -83,10 +89,12 @@ FILE* socketAccept(int listeningSocket, std::string* acceptedIp) {
 
     int flags = fcntl(afd, F_GETFL);
     if(flags == -1) {
+        closesocket(afd);
         return NULL;
     }
 
     if(fcntl(afd, F_SETFL, flags | O_NONBLOCK) != 0) {
+        closesocket(afd);
         return NULL;
     }
 
@@ -103,25 +111,67 @@ FILE* socketConnect(const std::string ipAddress, u16 port) {
         return NULL;
     }
 
+    int flags = fcntl(fd, F_GETFL);
+    if(flags == -1) {
+        closesocket(fd);
+        return NULL;
+    }
+
+    if(fcntl(fd, F_SETFL, flags | O_NONBLOCK) != 0) {
+        closesocket(fd);
+        return NULL;
+    }
+
     struct sockaddr_in address;
     memset(&address, 0, sizeof(address));
     address.sin_family = AF_INET;
     address.sin_port = htons(port);
 
     if(inet_aton(ipAddress.c_str(), &address.sin_addr) <= 0) {
+        closesocket(fd);
         return NULL;
     }
 
     if(connect(fd, (struct sockaddr*) &address, sizeof(address)) < 0) {
+        if(errno != EINPROGRESS) {
+            closesocket(fd);
+            return NULL;
+        }
+    }
+
+    fd_set set;
+    FD_ZERO(&set);
+    FD_SET(fd, &set);
+
+    struct timeval timeout;
+    timeout.tv_sec = 10;
+    timeout.tv_usec = 0;
+
+    int selectRet = select(fd + 1, NULL, &set, NULL, &timeout);
+    if(selectRet <= 0) {
+        if(selectRet == 0) {
+            errno = ETIMEDOUT;
+        }
+
+        closesocket(fd);
         return NULL;
     }
 
-    int flags = fcntl(fd, F_GETFL);
-    if(flags == -1) {
+    if(!FD_ISSET(fd, &set)) {
+        closesocket(fd);
         return NULL;
     }
 
-    if(fcntl(fd, F_SETFL, flags | O_NONBLOCK) != 0) {
+    int sockError;
+    socklen_t sockErrorLen = sizeof(sockError);
+    if(getsockopt(fd, SOL_SOCKET, SO_ERROR, &sockError, &sockErrorLen) < 0) {
+        closesocket(fd);
+        return NULL;
+    }
+
+    if(sockError) {
+        errno = sockError;
+        closesocket(fd);
         return NULL;
     }
 
