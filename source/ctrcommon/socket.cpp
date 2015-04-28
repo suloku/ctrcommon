@@ -143,7 +143,7 @@ FILE* socketConnect(const std::string ipAddress, u16 port, int timeout) {
     pollinfo.fd = fd;
     pollinfo.events = POLLOUT;
     pollinfo.revents = 0;
-    int pollRet = poll(&pollinfo, 1, timeout * 1000);
+    int pollRet = poll(&pollinfo, 1, timeout > 0 ? timeout * 1000 : timeout);
     if(pollRet <= 0) {
         if(pollRet == 0) {
             errno = ETIMEDOUT;
