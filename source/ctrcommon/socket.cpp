@@ -4,8 +4,8 @@
 
 #include <arpa/inet.h>
 #include <sys/errno.h>
-#include <sys/select.h>
 #include <fcntl.h>
+#include <poll.h>
 #include <string.h>
 
 #include <3ds.h>
@@ -139,38 +139,16 @@ FILE* socketConnect(const std::string ipAddress, u16 port) {
         }
     }
 
-    fd_set set;
-    FD_ZERO(&set);
-    FD_SET(fd, &set);
-
-    struct timeval timeout;
-    timeout.tv_sec = 10;
-    timeout.tv_usec = 0;
-
-    int selectRet = select(fd + 1, NULL, &set, NULL, &timeout);
-    if(selectRet <= 0) {
-        if(selectRet == 0) {
+    struct pollfd pollinfo;
+    pollinfo.fd = fd;
+    pollinfo.events = POLLOUT;
+    pollinfo.revents = 0;
+    int pollRet = poll(&pollinfo, 1, 10000);
+    if(pollRet <= 0) {
+        if(pollRet == 0) {
             errno = ETIMEDOUT;
         }
 
-        closesocket(fd);
-        return NULL;
-    }
-
-    if(!FD_ISSET(fd, &set)) {
-        closesocket(fd);
-        return NULL;
-    }
-
-    int sockError;
-    socklen_t sockErrorLen = sizeof(sockError);
-    if(getsockopt(fd, SOL_SOCKET, SO_ERROR, &sockError, &sockErrorLen) < 0) {
-        closesocket(fd);
-        return NULL;
-    }
-
-    if(sockError) {
-        errno = sockError;
         closesocket(fd);
         return NULL;
     }
