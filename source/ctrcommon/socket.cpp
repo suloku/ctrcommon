@@ -101,7 +101,7 @@ FILE* socketAccept(int listeningSocket, std::string* acceptedIp) {
     return fdopen(afd, "rw");
 }
 
-FILE* socketConnect(const std::string ipAddress, u16 port) {
+FILE* socketConnect(const std::string ipAddress, u16 port, int timeout) {
     if(!serviceRequire("soc")) {
         return NULL;
     }
@@ -143,7 +143,7 @@ FILE* socketConnect(const std::string ipAddress, u16 port) {
     pollinfo.fd = fd;
     pollinfo.events = POLLOUT;
     pollinfo.revents = 0;
-    int pollRet = poll(&pollinfo, 1, 10000);
+    int pollRet = poll(&pollinfo, 1, timeout * 1000);
     if(pollRet <= 0) {
         if(pollRet == 0) {
             errno = ETIMEDOUT;
