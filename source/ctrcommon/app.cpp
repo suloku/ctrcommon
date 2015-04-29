@@ -33,14 +33,14 @@ AppPlatform appPlatformFromId(u16 id) {
 }
 
 AppCategory appCategoryFromId(u16 id) {
-    if(id & 0x2) {
-        return CATEGORY_DEMO;
-    } else if(id & 0x6) {
-        return CATEGORY_PATCH;
-    } else if(id & 0x10) {
-        return CATEGORY_SYSTEM;
-    } else if(id & 0x8000) {
+    if((id & 0x8000) == 0x8000) {
         return CATEGORY_TWL;
+    } else if((id & 0x10) == 0x10) {
+        return CATEGORY_SYSTEM;
+    } else if((id & 0x6) == 0x6) {
+        return CATEGORY_PATCH;
+    } else if((id & 0x2) == 0x2) {
+        return CATEGORY_DEMO;
     }
 
     return CATEGORY_APP;
