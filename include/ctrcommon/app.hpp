@@ -19,6 +19,7 @@ typedef enum {
 typedef enum {
     CATEGORY_APP,
     CATEGORY_DEMO,
+    CATEGORY_DLC,
     CATEGORY_PATCH,
     CATEGORY_SYSTEM,
     CATEGORY_TWL

@@ -39,6 +39,8 @@ AppCategory appCategoryFromId(u16 id) {
         return CATEGORY_SYSTEM;
     } else if((id & 0x6) == 0x6) {
         return CATEGORY_PATCH;
+    } else if((id & 0x4) == 0x4) {
+        return CATEGORY_DLC;
     } else if((id & 0x2) == 0x2) {
         return CATEGORY_DEMO;
     }
@@ -98,6 +100,8 @@ const std::string appGetCategoryName(AppCategory category) {
             return "App";
         case CATEGORY_DEMO:
             return "Demo";
+        case CATEGORY_DLC:
+            return "DLC";
         case CATEGORY_PATCH:
             return "Patch";
         case CATEGORY_SYSTEM:
@@ -147,8 +151,8 @@ std::vector<App> appList(MediaType mediaType) {
         }
 
         app.mediaType = mediaType;
-        app.platform = appPlatformFromId(((u16 *) &titleId)[3]);
-        app.category = appCategoryFromId(((u16 *) &titleId)[2]);
+        app.platform = appPlatformFromId(((u16*) &titleId)[3]);
+        app.category = appCategoryFromId(((u16*) &titleId)[2]);
         app.version = titleList[i].titleVersion;
         app.size = titleList[i].size;
 
