@@ -204,17 +204,12 @@ AppResult appInstall(MediaType mediaType, FILE* fd, u64 size, std::function<bool
     u64 pos = 0;
     while(platformIsRunning()) {
         if(onProgress != NULL && !onProgress(pos, size)) {
-            AM_CancelCIAInstall(&ciaHandle);
             cancelled = true;
             break;
         }
 
-        u64 bytesRead = fread(buf, 1, bufSize, fd);
-        if(bytesRead == 0) {
-            if((errno != EAGAIN && errno != EWOULDBLOCK) || (size != 0 && pos == size)) {
-                break;
-            }
-        } else {
+        size_t bytesRead = fread(buf, 1, bufSize, fd);
+        if(bytesRead > 0) {
             Result writeResult = FSFILE_Write(ciaHandle, NULL, pos, buf, (u32) bytesRead, FS_WRITE_NOFLUSH);
             if(writeResult != 0) {
                 AM_CancelCIAInstall(&ciaHandle);
@@ -224,11 +219,16 @@ AppResult appInstall(MediaType mediaType, FILE* fd, u64 size, std::function<bool
 
             pos += bytesRead;
         }
+
+        if((ferror(fd) && errno != EAGAIN && errno != EWOULDBLOCK && errno != EINPROGRESS) || (size != 0 && pos == size)) {
+            break;
+        }
     }
 
     free(buf);
 
     if(cancelled) {
+        AM_CancelCIAInstall(&ciaHandle);
         return APP_OPERATION_CANCELLED;
     }
 

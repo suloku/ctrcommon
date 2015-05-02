@@ -468,54 +468,65 @@ RemoteFile uiAcceptRemoteFile(Screen screen, std::function<void(std::stringstrea
 
     FILE* socket;
     while((socket = socketAccept(listen)) == NULL) {
+        if(!platformIsRunning()) {
+            close(listen);
+            return {NULL, 0};
+        }
+
         if(errno != EAGAIN && errno != EWOULDBLOCK && errno != EINPROGRESS) {
             close(listen);
 
             std::stringstream errStream;
             errStream << "Failed to accept peer." << "\n" << strerror(errno) << "\n";
             uiPrompt(screen, errStream.str(), false);
-            return {NULL, 0};
-        } else if(platformIsRunning()) {
-            inputPoll();
-            if(inputIsPressed(BUTTON_B)) {
-                close(listen);
-                return {NULL, 0};
-            }
 
-            std::stringstream infoStream;
-            infoStream << baseInfo;
-            onWait(infoStream);
-            uiDisplayMessage(screen, infoStream.str());
-        } else {
             return {NULL, 0};
         }
+
+        inputPoll();
+        if(inputIsPressed(BUTTON_B)) {
+            close(listen);
+            return {NULL, 0};
+        }
+
+        std::stringstream infoStream;
+        infoStream << baseInfo;
+        onWait(infoStream);
+        uiDisplayMessage(screen, infoStream.str());
     }
 
     close(listen);
 
-    uiDisplayMessage(screen, "Reading info...");
+    uiDisplayMessage(screen, "Reading info...\nPress B to cancel.");
 
     u64 fileSize = 0;
     u64 bytesRead = 0;
-    while(platformIsRunning()) {
-        u64 currBytesRead = fread(&fileSize, 1, (size_t) (sizeof(fileSize) - bytesRead), socket);
-        bytesRead += currBytesRead;
-        if(currBytesRead == 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
-            if(bytesRead != sizeof(fileSize)) {
-                fclose(socket);
-
-                std::stringstream errStream;
-                errStream << "Failed to read info." << "\n" << strerror(errno) << "\n";
-                uiPrompt(screen, errStream.str(), false);
-                return {NULL, 0};
-            }
-
-            break;
+    while(bytesRead < sizeof(fileSize)) {
+        if(!platformIsRunning()) {
+            fclose(socket);
+            return {NULL, 0};
         }
-    }
 
-    if(!platformIsRunning()) {
-        return {NULL, 0};
+        size_t currBytesRead = fread(&fileSize + bytesRead, 1, (size_t) (sizeof(fileSize) - bytesRead), socket);
+        if(currBytesRead > 0) {
+            bytesRead += currBytesRead;
+        }
+
+        if(ferror(socket) && errno != EAGAIN && errno != EWOULDBLOCK && errno != EINPROGRESS) {
+            fclose(socket);
+
+            std::stringstream errStream;
+            errStream << "Failed to read info." << "\n" << strerror(errno) << "\n";
+            uiPrompt(screen, errStream.str(), false);
+
+            return {NULL, 0};
+        }
+
+        inputPoll();
+        if(inputIsPressed(BUTTON_B)) {
+            fclose(socket);
+            return {NULL, 0};
+        }
     }
 
     fileSize = ntohll(fileSize);
