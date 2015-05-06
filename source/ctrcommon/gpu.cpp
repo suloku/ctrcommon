@@ -219,6 +219,7 @@ bool gpuInit() {
     GPU_Init(NULL);
     GPU_Reset(NULL, gpuCmd, gpuCmdSize);
     GPUCMD_SetBufferOffset(0);
+    gfxSet3D(true);
 
     gpuClear();
     return true;
@@ -326,6 +327,14 @@ void gpuFlushBuffer() {
     u32* fb = (u32*) gfxGetFramebuffer(viewportScreen == TOP_SCREEN ? GFX_TOP : GFX_BOTTOM, GFX_LEFT, &fbWidth, &fbHeight);
     GX_SetDisplayTransfer(NULL, gpuFrameBuffer, (viewportHeight << 16) | viewportWidth, fb, (fbHeight << 16) | fbWidth, (PIXEL_RGB8 << 12));
     gpuSafeWait(GSPEVENT_PPF);
+
+    if(viewportScreen == TOP_SCREEN) {
+        u16 fbWidthRight;
+        u16 fbHeightRight;
+        u32* fbRight = (u32*) gfxGetFramebuffer(GFX_TOP, GFX_RIGHT, &fbWidthRight, &fbHeightRight);
+        GX_SetDisplayTransfer(NULL, gpuFrameBuffer, (viewportHeight << 16) | viewportWidth, fbRight, (fbHeightRight << 16) | fbWidthRight, (PIXEL_RGB8 << 12));
+        gpuSafeWait(GSPEVENT_PPF);
+    }
 }
 
 void gpuSwapBuffers(bool vblank) {
