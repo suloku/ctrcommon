@@ -3,13 +3,16 @@
 
 #include "ctrcommon/types.hpp"
 
+#define SOUND_CHANNEL_COUNT 8
+
 typedef enum {
-    FORMAT_PCM8 = 0,
-    FORMAT_PCM16 = 4096
-} SoundFormat;
+    SAMPLE_PCM8,
+    SAMPLE_PCM16
+} SampleFormat;
 
 void* soundAlloc(u32 size);
 void soundFree(void* mem);
-bool soundPlay(u32 channel, SoundFormat format, u32 sampleRate, void* samples, u32 numSamples, float volume = 1, float pan = 0, bool loop = false);
+bool soundSetChannel(u32 channel, void* samples, u32 numSamples, SampleFormat format, u32 sampleRate, float leftVolume, float rightVolume, bool loop);
+bool soundFlush();
 
 #endif

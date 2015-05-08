@@ -47,10 +47,10 @@ ASFLAGS := -g $(ARCH)
 LDFLAGS = -specs=3dsx.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
 
 LIBS	:= -lctru -lm
-LIBDIRS	:= $(CTRULIB) ./lib
+LIBDIRS	:= $(PORTLIBS) $(CTRULIB) ./lib
 ifeq ($(NO_CTRCOMMON),)
 	LIBS	:= -lctrcommon -lctru -lm
-	LIBDIRS	:= $(CTRCOMMON) $(CTRULIB) ./lib
+	LIBDIRS	:= $(CTRCOMMON) $(PORTLIBS) $(CTRULIB) ./lib
 endif
 
 RSF_3DS = $(CTRCOMMON)/tools/template-3ds.rsf
