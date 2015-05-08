@@ -151,6 +151,7 @@ void gpuFlush();
 void gpuFlushBuffer();
 void gpuSwapBuffers(bool vblank);
 
+void gpuClearScreens();
 void gpuClear();
 
 void gpuClearColor(u8 red, u8 green, u8 blue, u8 alpha);

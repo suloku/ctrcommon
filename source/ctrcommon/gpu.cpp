@@ -67,6 +67,10 @@ static u32 formatSizes[13] = {
     4, 3, 2, 2, 2, 2, 2, 1, 1, 1, 1, 4, 4
 };
 
+static PixelFormat fbFormatToGPU[5] = {
+    PIXEL_RGBA8, PIXEL_RGB8, PIXEL_RGB565, PIXEL_RGBA5551, PIXEL_RGBA4
+};
+
 static u32* gpuFrameBuffer = (u32*) 0x1F119400;
 static u32* gpuDepthBuffer = (u32*) 0x1F370800;
 extern Handle gspEvents[GSPEVENT_MAX];
@@ -322,17 +326,20 @@ void gpuFlush() {
 }
 
 void gpuFlushBuffer() {
+    gfxScreen_t screen = viewportScreen == TOP_SCREEN ? GFX_TOP : GFX_BOTTOM;
+    PixelFormat screenFormat = fbFormatToGPU[gfxGetScreenFormat(screen)];
+
     u16 fbWidth;
     u16 fbHeight;
-    u32* fb = (u32*) gfxGetFramebuffer(viewportScreen == TOP_SCREEN ? GFX_TOP : GFX_BOTTOM, GFX_LEFT, &fbWidth, &fbHeight);
-    GX_SetDisplayTransfer(NULL, gpuFrameBuffer, (viewportHeight << 16) | viewportWidth, fb, (fbHeight << 16) | fbWidth, (PIXEL_RGB8 << 12));
+    u32* fb = (u32*) gfxGetFramebuffer(screen, GFX_LEFT, &fbWidth, &fbHeight);
+    GX_SetDisplayTransfer(NULL, gpuFrameBuffer, (viewportHeight << 16) | viewportWidth, fb, (fbHeight << 16) | fbWidth, (screenFormat << 12));
     gpuSafeWait(GSPEVENT_PPF);
 
-    if(viewportScreen == TOP_SCREEN) {
+    if(screen == GFX_TOP) {
         u16 fbWidthRight;
         u16 fbHeightRight;
-        u32* fbRight = (u32*) gfxGetFramebuffer(GFX_TOP, GFX_RIGHT, &fbWidthRight, &fbHeightRight);
-        GX_SetDisplayTransfer(NULL, gpuFrameBuffer, (viewportHeight << 16) | viewportWidth, fbRight, (fbHeightRight << 16) | fbWidthRight, (PIXEL_RGB8 << 12));
+        u32* fbRight = (u32*) gfxGetFramebuffer(screen, GFX_RIGHT, &fbWidthRight, &fbHeightRight);
+        GX_SetDisplayTransfer(NULL, gpuFrameBuffer, (viewportHeight << 16) | viewportWidth, fbRight, (fbHeightRight << 16) | fbWidthRight, (screenFormat << 12));
         gpuSafeWait(GSPEVENT_PPF);
     }
 }
@@ -341,6 +348,29 @@ void gpuSwapBuffers(bool vblank) {
     gfxSwapBuffersGpu();
     if(vblank) {
         gpuSafeWait(GSPEVENT_VBlank0);
+    }
+}
+
+void gpuClearScreens() {
+    u32 topFormatSize = formatSizes[fbFormatToGPU[gfxGetScreenFormat(GFX_TOP)]];
+    u32 bottomFormatSize = formatSizes[fbFormatToGPU[gfxGetScreenFormat(GFX_BOTTOM)]];
+    for(int buffer = 0; buffer < 2; buffer++) {
+        u16 fbWidthLeft;
+        u16 fbHeightLeft;
+        u32* fbLeft = (u32*) gfxGetFramebuffer(GFX_TOP, GFX_RIGHT, &fbWidthLeft, &fbHeightLeft);
+        memset(fbLeft, 0, fbWidthLeft * fbHeightLeft * topFormatSize);
+
+        u16 fbWidthRight;
+        u16 fbHeightRight;
+        u32* fbRight = (u32*) gfxGetFramebuffer(GFX_TOP, GFX_RIGHT, &fbWidthRight, &fbHeightRight);
+        memset(fbRight, 0, fbWidthRight * fbHeightRight * topFormatSize);
+
+        u16 fbWidthBottom;
+        u16 fbHeightBottom;
+        u32* fbBottom = (u32*) gfxGetFramebuffer(GFX_TOP, GFX_RIGHT, &fbWidthBottom, &fbHeightBottom);
+        memset(fbBottom, 0, fbWidthBottom * fbHeightBottom * bottomFormatSize);
+
+        gpuSwapBuffers(false);
     }
 }
 
