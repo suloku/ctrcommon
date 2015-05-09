@@ -745,23 +745,29 @@ void gpuFreeTexture(u32 texture) {
     free(textureData);
 }
 
-void gpuTextureData(u32 texture, const void* data, u32 inWidth, u32 inHeight, PixelFormat inFormat, u32 outWidth, u32 outHeight, PixelFormat outFormat, u32 params) {
+void* gpuGetTextureData(u32 texture) {
+    TextureData* textureData = (TextureData*) texture;
+    if(textureData == NULL) {
+        return NULL;
+    }
+
+    return textureData->data;
+}
+
+void gpuTextureInfo(u32 texture, u32 width, u32 height, PixelFormat format, u32 params) {
     TextureData* textureData = (TextureData*) texture;
     if(textureData == NULL) {
         return;
     }
 
     bool dirty = false;
-
-    u32 inSize = inWidth * inHeight * formatSizes[inFormat];
-    u32 outSize = outWidth * outHeight * formatSizes[outFormat];
-
-    if(textureData->data == NULL || textureData->size != outSize) {
+    u32 size = width * height * formatSizes[format];
+    if(textureData->data == NULL || textureData->size != size) {
         if(textureData->data != NULL) {
             linearFree(textureData->data);
         }
 
-        textureData->data = linearMemAlign(outSize, 0x80);
+        textureData->data = linearMemAlign(size, 0x80);
         if(textureData->data == NULL) {
             return;
         }
@@ -769,23 +775,14 @@ void gpuTextureData(u32 texture, const void* data, u32 inWidth, u32 inHeight, Pi
         dirty = true;
     }
 
-    if(outFormat != textureData->format || params != textureData->params || outWidth != textureData->width || outHeight != textureData->height) {
+    if(format != textureData->format || params != textureData->params || width != textureData->width || height != textureData->height) {
         dirty = true;
     }
 
-    u32 flags = (u32) ((1 << 1) | (inFormat << 8) | (outFormat << 12));
-    if(outWidth < inWidth || outHeight < inHeight) {
-        flags |= (1 << 2);
-    }
-
-    GSPGPU_FlushDataCache(NULL, (u8*) data, inSize);
-    GX_SetDisplayTransfer(NULL, (u32*) data, (inHeight << 16) | inWidth, (u32*) textureData->data, (outHeight << 16) | outWidth, flags);
-    gpuSafeWait(GSPEVENT_PPF);
-
-    textureData->width = outWidth;
-    textureData->height = outHeight;
-    textureData->size = outSize;
-    textureData->format = outFormat;
+    textureData->width = width;
+    textureData->height = height;
+    textureData->size = size;
+    textureData->format = format;
     textureData->params = params;
 
     if(dirty) {
@@ -796,6 +793,22 @@ void gpuTextureData(u32 texture, const void* data, u32 inWidth, u32 inHeight, Pi
             }
         }
     }
+}
+
+void gpuTextureData(u32 texture, const void* data, u32 width, u32 height, PixelFormat format, u32 params) {
+    TextureData* textureData = (TextureData*) texture;
+    if(textureData == NULL) {
+        return;
+    }
+
+    gpuTextureInfo(texture, width, height, format, params);
+
+    u32 size = width * height * formatSizes[format];
+    u32 flags = (u32) ((1 << 1) | (format << 8) | (format << 12));
+
+    GSPGPU_FlushDataCache(NULL, (u8*) data, size);
+    GX_SetDisplayTransfer(NULL, (u32*) data, (height << 16) | width, (u32*) textureData->data, (height << 16) | width, flags);
+    gpuSafeWait(GSPEVENT_PPF);
 }
 
 void gpuBindTexture(TexUnit unit, u32 texture) {
