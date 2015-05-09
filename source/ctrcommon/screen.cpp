@@ -148,7 +148,12 @@ bool screenBeginDraw(Screen screen) {
         return false;
     }
 
-    fb = gfxGetFramebuffer(screen == TOP_SCREEN ? GFX_TOP : GFX_BOTTOM, GFX_LEFT, &fbWidth, &fbHeight);
+    gfxScreen_t gfxScreen = screen == TOP_SCREEN ? GFX_TOP : GFX_BOTTOM;
+    if(gfxGetScreenFormat(gfxScreen) != GSP_BGR8_OES) {
+        return false;
+    }
+
+    fb = gfxGetFramebuffer(gfxScreen, GFX_LEFT, &fbWidth, &fbHeight);
     return true;
 }
 
