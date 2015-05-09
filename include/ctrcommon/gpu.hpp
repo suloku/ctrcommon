@@ -192,17 +192,7 @@ void gpuVboAttributes(u32 vbo, u64 attributes, u8 attributeCount);
 void gpuDrawVbo(u32 vbo);
 
 inline u32 gpuTextureIndex(u32 x, u32 y, u32 w, u32 h) {
-    // TODO: Hardcoded to 512x512 textures for now.
-    u32 index = 0;
-    index |= x & 1;
-    index |= (y & 1) << 1;
-    index |= (x & 2) << 1;
-    index |= (y & 2) << 2;
-    index |= (x & 4) << 2;
-    index |= (y & 4) << 3;
-    index |= (x & 0x1F8) << 3;
-    index |= (y & 0x1F8) << 9;
-    return index;
+    return (((y >> 3) * (w >> 3) + (x >> 3)) << 6) + ((x & 1) | ((y & 1) << 1) | ((x & 2) << 1) | ((y & 2) << 2) | ((x & 4) << 2) | ((y & 4) << 3));
 }
 
 void gpuTexEnv(u32 env, u16 rgbSources, u16 alphaSources, u16 rgbOperands, u16 alphaOperands, CombineFunc rgbCombine, CombineFunc alphaCombine, u32 constantColor);
