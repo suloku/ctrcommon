@@ -442,11 +442,7 @@ void uiDisplayProgress(Screen screen, const std::string operation, const std::st
     screenClear(0, 0, 0);
     screenDrawString(str, (screenGetWidth() - screenGetStrWidth(str)) / 2, (screenGetHeight() - screenGetStrHeight(str)) / 2, 255, 255, 255);
     screenEndDraw();
-    if(quickSwap) {
-        screenSwapBuffersQuick();
-    } else {
-        screenSwapBuffers();
-    }
+    screenSwapBuffers(!quickSwap);
 }
 
 RemoteFile uiAcceptRemoteFile(Screen screen, std::function<void(std::stringstream& infoStream)> onWait) {

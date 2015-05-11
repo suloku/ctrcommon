@@ -158,7 +158,7 @@ bool screenBeginDraw(Screen screen) {
 }
 
 bool screenEndDraw() {
-    if(fb == NULL || !serviceRequire("gfx")) {
+    if(fb == NULL) {
         return false;
     }
 
@@ -168,22 +168,16 @@ bool screenEndDraw() {
     return true;
 }
 
-void screenSwapBuffersQuick() {
+void screenSwapBuffers(bool vblank) {
     if(!serviceRequire("gfx")) {
         return;
     }
 
     gfxFlushBuffers();
-    gfxSwapBuffers();
-}
-
-void screenSwapBuffers() {
-    if(!serviceRequire("gfx")) {
-        return;
+    if(vblank) {
+        gspWaitForVBlank();
     }
 
-    gfxFlushBuffers();
-    gspWaitForVBlank();
     gfxSwapBuffers();
 }
 

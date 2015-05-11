@@ -12,8 +12,7 @@ typedef enum {
 
 bool screenBeginDraw(Screen screen);
 bool screenEndDraw();
-void screenSwapBuffersQuick();
-void screenSwapBuffers();
+void screenSwapBuffers(bool vblank = true);
 u16 screenGetWidth();
 u16 screenGetHeight();
 bool screenReadPixels(u8* dest, int srcX, int srcY, u16 srcWidth, u16 srcHeight, int dstX, int dstY, u16 dstWidth, u16 dstHeight);
