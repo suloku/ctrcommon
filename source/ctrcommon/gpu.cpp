@@ -63,8 +63,9 @@ typedef struct {
     u32 constantColor;
 } TexEnv;
 
-static u32 formatSizes[13] = {
-    4, 3, 2, 2, 2, 2, 2, 1, 1, 1, 1, 4, 4
+// TODO: ETC format sizes are a guess.
+static u32 formatSizes[14] = {
+    4, 3, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 4, 4
 };
 
 static PixelFormat fbFormatToGPU[5] = {

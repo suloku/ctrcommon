@@ -132,8 +132,9 @@ typedef enum {
     PIXEL_A8 = 0x8,
     PIXEL_LA4 = 0x9,
     PIXEL_L4 = 0xA,
-    PIXEL_ETC1 = 0xB,
-    PIXEL_ETC1A4 = 0xC
+    PIXEL_A4 = 0xB,
+    PIXEL_ETC1 = 0xC,
+    PIXEL_ETC1A4 = 0xD
 } PixelFormat;
 
 typedef enum {
