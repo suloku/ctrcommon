@@ -11,15 +11,17 @@
 #include <sstream>
 
 #include <3ds.h>
-#include <ctrcommon/platform.hpp>
+
+#include <ctrcommon/gpu.hpp>
 
 static Error* currentError;
 
 bool platformInit() {
-    return serviceRequire("gfx");
+    return gpuInit();
 }
 
 void platformCleanup() {
+    gpuCleanup();
     serviceCleanup();
 }
 

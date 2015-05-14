@@ -2,7 +2,7 @@
 #define __CTRCOMMON_UI_HPP__
 
 #include "ctrcommon/app.hpp"
-#include "ctrcommon/screen.hpp"
+#include "ctrcommon/gpu.hpp"
 #include "ctrcommon/types.hpp"
 
 #include <functional>

@@ -7,8 +7,6 @@
 
 #include <3ds.h>
 
-// TODO: Find a way around requiring linear-allocated inputs to texture data, or at least make a nice way to allocate.
-
 #define TEX_ENV_COUNT 6
 #define TEX_UNIT_COUNT 3
 
@@ -63,9 +61,21 @@ typedef struct {
     u32 constantColor;
 } TexEnv;
 
-// TODO: ETC format sizes are a guess.
-static u32 formatSizes[14] = {
-    4, 3, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 4, 4
+static u32 nibblesPerFormatPixel[14] = {
+    8, // RGBA8
+    6, // RGB8
+    4, // RGBA5551
+    4, // RGB565
+    4, // RGBA4
+    4, // LA8
+    4, // HILO8
+    2, // L8
+    2, // A8
+    2, // LA4
+    1, // L4
+    1, // A4
+    1, // ETC1
+    2, // ETC1A4
 };
 
 static PixelFormat fbFormatToGPU[5] = {
@@ -136,6 +146,10 @@ TexEnv texEnv[TEX_ENV_COUNT];
 TextureData* activeTextures[TEX_UNIT_COUNT];
 u32 enabledTextures;
 
+extern void gputInit();
+extern void gputCleanup();
+extern void gputUpdateViewport(u32 width, u32 height);
+
 bool gpuInit() {
     if(!serviceRequire("gfx")) {
         return false;
@@ -151,14 +165,14 @@ bool gpuInit() {
     viewportScreen = TOP_SCREEN;
     viewportX = 0;
     viewportY = 0;
-    viewportWidth = 240;
-    viewportHeight = 400;
+    viewportWidth = 400;
+    viewportHeight = 240;
 
     scissorMode = SCISSOR_DISABLE;
     scissorX = 0;
     scissorY = 0;
-    scissorWidth = 240;
-    scissorHeight = 400;
+    scissorWidth = 400;
+    scissorHeight = 240;
 
     depthNear = 0;
     depthFar = 1;
@@ -219,15 +233,22 @@ bool gpuInit() {
 
     enabledTextures = 0;
 
+    gfxSet3D(true);
+
     u32 gpuCmdSize = 0x40000;
     u32* gpuCmd = (u32*) linearAlloc(gpuCmdSize * 4);
     GPU_Init(NULL);
     GPU_Reset(NULL, gpuCmd, gpuCmdSize);
     GPUCMD_SetBufferOffset(0);
-    gfxSet3D(true);
+
+    gputInit();
 
     gpuClear();
     return true;
+}
+
+void gpuCleanup() {
+    gputCleanup();
 }
 
 void* gpuAlloc(u32 size) {
@@ -243,11 +264,12 @@ void gpuUpdateState() {
     dirtyState = 0;
 
     if(dirtyUpdate & STATE_VIEWPORT) {
-        GPU_SetViewport((u32*) osConvertVirtToPhys((u32) gpuDepthBuffer), (u32*) osConvertVirtToPhys((u32) gpuFrameBuffer), viewportX, viewportY, viewportWidth, viewportHeight);
+        GPU_SetViewport((u32*) osConvertVirtToPhys((u32) gpuDepthBuffer), (u32*) osConvertVirtToPhys((u32) gpuFrameBuffer), viewportX, viewportY, viewportHeight, viewportWidth);
+        gputUpdateViewport(viewportWidth, viewportHeight);
     }
 
     if(dirtyUpdate & STATE_SCISSOR_TEST) {
-        GPU_SetScissorTest((GPU_SCISSORMODE) scissorMode, scissorX, scissorY, scissorWidth, scissorHeight);
+        GPU_SetScissorTest((GPU_SCISSORMODE) scissorMode, scissorX, scissorY, scissorHeight, scissorWidth);
     }
 
     if(dirtyUpdate & STATE_DEPTH_MAP) {
@@ -333,14 +355,14 @@ void gpuFlushBuffer() {
     u16 fbWidth;
     u16 fbHeight;
     u32* fb = (u32*) gfxGetFramebuffer(screen, GFX_LEFT, &fbWidth, &fbHeight);
-    GX_SetDisplayTransfer(NULL, gpuFrameBuffer, (viewportHeight << 16) | viewportWidth, fb, (fbHeight << 16) | fbWidth, (screenFormat << 12));
+    GX_SetDisplayTransfer(NULL, gpuFrameBuffer, (viewportWidth << 16) | viewportHeight, fb, (fbHeight << 16) | fbWidth, (screenFormat << 12));
     gpuSafeWait(GSPEVENT_PPF);
 
     if(screen == GFX_TOP) {
         u16 fbWidthRight;
         u16 fbHeightRight;
         u32* fbRight = (u32*) gfxGetFramebuffer(screen, GFX_RIGHT, &fbWidthRight, &fbHeightRight);
-        GX_SetDisplayTransfer(NULL, gpuFrameBuffer, (viewportHeight << 16) | viewportWidth, fbRight, (fbHeightRight << 16) | fbWidthRight, (screenFormat << 12));
+        GX_SetDisplayTransfer(NULL, gpuFrameBuffer, (viewportWidth << 16) | viewportHeight, fbRight, (fbHeightRight << 16) | fbWidthRight, (screenFormat << 12));
         gpuSafeWait(GSPEVENT_PPF);
     }
 }
@@ -353,23 +375,17 @@ void gpuSwapBuffers(bool vblank) {
 }
 
 void gpuClearScreens() {
-    u32 topFormatSize = formatSizes[fbFormatToGPU[gfxGetScreenFormat(GFX_TOP)]];
-    u32 bottomFormatSize = formatSizes[fbFormatToGPU[gfxGetScreenFormat(GFX_BOTTOM)]];
+    u32 topSize = 400 * 240 * nibblesPerFormatPixel[fbFormatToGPU[gfxGetScreenFormat(GFX_TOP)]] / 2;
+    u32 bottomSize = 320 * 240 * nibblesPerFormatPixel[fbFormatToGPU[gfxGetScreenFormat(GFX_BOTTOM)]] / 2;
     for(int buffer = 0; buffer < 2; buffer++) {
-        u16 fbWidthLeft;
-        u16 fbHeightLeft;
-        u32* fbLeft = (u32*) gfxGetFramebuffer(GFX_TOP, GFX_RIGHT, &fbWidthLeft, &fbHeightLeft);
-        memset(fbLeft, 0, fbWidthLeft * fbHeightLeft * topFormatSize);
+        u32* fbLeft = (u32*) gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL);
+        memset(fbLeft, 0, topSize);
 
-        u16 fbWidthRight;
-        u16 fbHeightRight;
-        u32* fbRight = (u32*) gfxGetFramebuffer(GFX_TOP, GFX_RIGHT, &fbWidthRight, &fbHeightRight);
-        memset(fbRight, 0, fbWidthRight * fbHeightRight * topFormatSize);
+        u32* fbRight = (u32*) gfxGetFramebuffer(GFX_TOP, GFX_RIGHT, NULL, NULL);
+        memset(fbRight, 0, topSize);
 
-        u16 fbWidthBottom;
-        u16 fbHeightBottom;
-        u32* fbBottom = (u32*) gfxGetFramebuffer(GFX_TOP, GFX_RIGHT, &fbWidthBottom, &fbHeightBottom);
-        memset(fbBottom, 0, fbWidthBottom * fbHeightBottom * bottomFormatSize);
+        u32* fbBottom = (u32*) gfxGetFramebuffer(GFX_BOTTOM, GFX_LEFT, NULL, NULL);
+        memset(fbBottom, 0, bottomSize);
 
         gpuSwapBuffers(false);
     }
@@ -386,6 +402,14 @@ void gpuClearColor(u8 red, u8 green, u8 blue, u8 alpha) {
 
 void gpuClearDepth(u32 depth) {
     clearDepth = depth;
+}
+
+int gpuGetViewportWidth() {
+    return (int) viewportWidth;
+}
+
+int gpuGetViewportHeight() {
+    return (int) viewportHeight;
 }
 
 void gpuViewport(Screen screen, u32 x, u32 y, u32 width, u32 height) {
@@ -576,7 +600,7 @@ void gpuSetUniformBool(u32 shader, ShaderType type, int id, bool value) {
     }
 }
 
-void gpuSetUniform(u32 shader, ShaderType type, const char* name, const void* data, u32 elements) {
+void gpuSetUniform(u32 shader, ShaderType type, const char* name, const float* data, u32 elements) {
     if(name == NULL || data == NULL) {
         return;
     }
@@ -586,11 +610,19 @@ void gpuSetUniform(u32 shader, ShaderType type, const char* name, const void* da
         return;
     }
 
+    float fixedData[elements * 4];
+    for(u32 i = 0; i < elements; i++) {
+        fixedData[i * 4 + 0] = data[i * 4 + 3];
+        fixedData[i * 4 + 1] = data[i * 4 + 2];
+        fixedData[i * 4 + 2] = data[i * 4 + 1];
+        fixedData[i * 4 + 3] = data[i * 4 + 0];
+    }
+
     shaderInstance_s* instance = type == VERTEX_SHADER ? shdr->program.vertexShader : shdr->program.geometryShader;
     if(instance != NULL) {
         Result res = shaderInstanceGetUniformLocation(instance, name);
         if(res >= 0) {
-            GPU_SetFloatUniform((GPU_SHADER_TYPE) type, (u32) res, (u32 *) data, elements);
+            GPU_SetFloatUniform((GPU_SHADER_TYPE) type, (u32) res, (u32*) fixedData, elements);
         }
     }
 }
@@ -762,7 +794,7 @@ void gpuTextureInfo(u32 texture, u32 width, u32 height, PixelFormat format, u32 
     }
 
     bool dirty = false;
-    u32 size = width * height * formatSizes[format];
+    u32 size = (u32) (width * height * nibblesPerFormatPixel[format] / 2);
     if(textureData->data == NULL || textureData->size != size) {
         if(textureData->data != NULL) {
             linearFree(textureData->data);
@@ -804,7 +836,7 @@ void gpuTextureData(u32 texture, const void* data, u32 width, u32 height, PixelF
 
     gpuTextureInfo(texture, width, height, format, params);
 
-    u32 size = width * height * formatSizes[format];
+    u32 size = (u32) (width * height * nibblesPerFormatPixel[format] / 2);
     u32 flags = (u32) ((1 << 1) | (format << 8) | (format << 12));
 
     GSPGPU_FlushDataCache(NULL, (u8*) data, size);
@@ -814,8 +846,10 @@ void gpuTextureData(u32 texture, const void* data, u32 width, u32 height, PixelF
 
 void gpuBindTexture(TexUnit unit, u32 texture) {
     u32 unitIndex = unit == TEXUNIT0 ? 0 : unit == TEXUNIT1 ? 1 : 2;
-    activeTextures[unitIndex] = (TextureData*) texture;
+    if(activeTextures[unitIndex] != (TextureData*) texture) {
+        activeTextures[unitIndex] = (TextureData*) texture;
 
-    dirtyState |= STATE_TEXTURES;
-    dirtyTextures |= (1 << unitIndex);
+        dirtyState |= STATE_TEXTURES;
+        dirtyTextures |= (1 << unitIndex);
+    }
 }

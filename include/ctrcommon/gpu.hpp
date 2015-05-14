@@ -1,8 +1,9 @@
 #ifndef __CTRCOMMON_GPU_HPP__
 #define __CTRCOMMON_GPU_HPP__
 
-#include "ctrcommon/screen.hpp"
 #include "ctrcommon/types.hpp"
+
+#include <string>
 
 // TODO: error reporting system
 
@@ -15,6 +16,11 @@
 #define TEXTURE_MIN_FILTER(v) (((v)&0x1)<<2)
 #define TEXTURE_WRAP_S(v) (((v)&0x3)<<8)
 #define TEXTURE_WRAP_T(v) (((v)&0x3)<<12)
+
+typedef enum {
+    TOP_SCREEN,
+    BOTTOM_SCREEN
+} Screen;
 
 typedef enum {
     CULL_NONE = 0x0,
@@ -144,6 +150,7 @@ typedef enum {
 } ScissorMode;
 
 bool gpuInit();
+void gpuCleanup();
 
 void* gpuAlloc(u32 size);
 void gpuFree(void* mem);
@@ -157,6 +164,9 @@ void gpuClear();
 
 void gpuClearColor(u8 red, u8 green, u8 blue, u8 alpha);
 void gpuClearDepth(u32 depth);
+
+int gpuGetViewportWidth();
+int gpuGetViewportHeight();
 
 void gpuViewport(Screen screen, u32 x, u32 y, u32 width, u32 height);
 void gpuScissorTest(ScissorMode mode, u32 x, u32 y, u32 width, u32 height);
@@ -183,7 +193,7 @@ void gpuLoadShader(u32 shader, const void* data, u32 size, u8 geometryStride = 0
 void gpuUseShader(u32 shader);
 void gpuGetUniformBool(u32 shader, ShaderType type, int id, bool* value);
 void gpuSetUniformBool(u32 shader, ShaderType type, int id, bool value);
-void gpuSetUniform(u32 shader, ShaderType type, const char* name, const void* data, u32 elements);
+void gpuSetUniform(u32 shader, ShaderType type, const char* name, const float* data, u32 elements);
 
 void gpuCreateVbo(u32* vbo);
 void gpuFreeVbo(u32 vbo);
@@ -203,5 +213,14 @@ void* gpuGetTextureData(u32 texture);
 void gpuTextureInfo(u32 texture, u32 width, u32 height, PixelFormat format, u32 params);
 void gpuTextureData(u32 texture, const void* data, u32 width, u32 height, PixelFormat format, u32 params);
 void gpuBindTexture(TexUnit unit, u32 texture);
+
+// GPUT - GPU Tools
+
+void gputUseDefaultShader();
+int gputGetStringWidth(const std::string str, float scale = 1);
+int gputGetStringHeight(const std::string str, float scale = 1);
+void gputDrawString(const std::string str, int x, int y, float scale = 1, u8 red = 0xFF, u8 green = 0xFF, u8 blue = 0xFF, u8 alpha = 0xFF);
+void gputDrawRectangle(int x, int y, u32 width, u32 height, u8 red = 0xFF, u8 green = 0xFF, u8 blue = 0xFF, u8 alpha = 0xFF);
+void gputTakeScreenshot();
 
 #endif

@@ -16,6 +16,7 @@
 #include <iomanip>
 #include <sstream>
 #include <stack>
+#include <ctrcommon/gpu.hpp>
 
 struct uiAlphabetize {
     inline bool operator()(SelectableElement a, SelectableElement b) {
@@ -103,10 +104,11 @@ bool uiSelect(SelectableElement* selected, std::vector<SelectableElement> elemen
             lastScrollTime = 0;
         }
 
-        screenBeginDraw(BOTTOM_SCREEN);
-        screenClear(0, 0, 0);
+        gpuViewport(BOTTOM_SCREEN, 0, 0, 320, 240);
+        gpuClear();
 
-        u16 screenWidth = screenGetWidth();
+        u32 screenWidth = (u32) gpuGetViewportWidth();
+        int screenHeight = gpuGetViewportHeight();
         for(std::vector<SelectableElement>::iterator it = elements.begin() + scroll; it != elements.begin() + scroll + 20 && it != elements.end(); it++) {
             SelectableElement element = *it;
             int index = it - elements.begin();
@@ -114,8 +116,8 @@ bool uiSelect(SelectableElement* selected, std::vector<SelectableElement> elemen
             int offset = 0;
             if(index == cursor) {
                 color = 0;
-                screenFill(0, (index - scroll) * 12 - 2, screenWidth, (u16) (screenGetStrHeight(element.name) + 4), 255, 255, 255);
-                u32 width = (u32) screenGetStrWidth(element.name);
+                gputDrawRectangle(0, (screenHeight - 1) - ((index - scroll + 1) * 12), screenWidth, (u32) (gputGetStringHeight(element.name) + 4));
+                u32 width = (u32) gputGetStringWidth(element.name);
                 if(width > screenWidth) {
                     if(selectionScroll + screenWidth >= width) {
                         if(selectionScrollEndTime == 0) {
@@ -132,23 +134,24 @@ bool uiSelect(SelectableElement* selected, std::vector<SelectableElement> elemen
                 offset = -selectionScroll;
             }
 
-            screenDrawString(element.name, offset, (index - scroll) * 12, color, color, color);
+            gputDrawString(element.name, offset, (screenHeight - 1) - ((index - scroll + 1) * 12) + 2, 1, color, color, color);
         }
 
-        screenEndDraw();
+        gpuFlush();
+        gpuFlushBuffer();
 
+        gpuViewport(TOP_SCREEN, 0, 0, 400, 240);
         if(useTopScreen) {
-            screenBeginDraw(TOP_SCREEN);
-            screenClear(0, 0, 0);
+            gpuClear();
 
-            SelectableElement currSelected = elements.at(cursor);
+            SelectableElement currSelected = elements.at((u32) cursor);
             if(currSelected.details.size() != 0) {
                 std::stringstream details;
                 for(std::vector<std::string>::iterator it = currSelected.details.begin(); it != currSelected.details.end(); it++) {
                     details << *it << "\n";
                 }
 
-                screenDrawString(details.str(), 0, 0, 255, 255, 255);
+                gputDrawString(details.str(), 0, gpuGetViewportHeight() - 1 - gputGetStringHeight(details.str()));
             }
         }
 
@@ -180,10 +183,11 @@ bool uiSelect(SelectableElement* selected, std::vector<SelectableElement> elemen
         }
 
         if(useTopScreen) {
-            screenEndDraw();
+            gpuFlush();
+            gpuFlushBuffer();
         }
 
-        screenSwapBuffers();
+        gpuSwapBuffers(true);
         if(result) {
             break;
         }
@@ -377,11 +381,15 @@ bool uiSelectApp(App* selectedApp, MediaType mediaType, std::function<bool(bool 
 }
 
 void uiDisplayMessage(Screen screen, const std::string message) {
-    screenBeginDraw(screen);
-    screenClear(0, 0, 0);
-    screenDrawString(message, (screenGetWidth() - screenGetStrWidth(message)) / 2, (screenGetHeight() - screenGetStrHeight(message)) / 2, 255, 255, 255);
-    screenEndDraw();
-    screenSwapBuffers();
+    gpuViewport(screen, 0, 0, screen == TOP_SCREEN ? 400 : 320, 240);
+
+    gpuClear();
+    gputDrawString(message, (gpuGetViewportWidth() - gputGetStringWidth(message)) / 2, (gpuGetViewportHeight() - gputGetStringHeight(message)) / 2);
+    gpuFlush();
+    gpuFlushBuffer();
+    gpuSwapBuffers(true);
+
+    gpuViewport(TOP_SCREEN, 0, 0, 400, 240);
 }
 
 bool uiPrompt(Screen screen, const std::string message, bool question) {
@@ -438,11 +446,15 @@ void uiDisplayProgress(Screen screen, const std::string operation, const std::st
 
     std::string str = stream.str();
 
-    screenBeginDraw(screen);
-    screenClear(0, 0, 0);
-    screenDrawString(str, (screenGetWidth() - screenGetStrWidth(str)) / 2, (screenGetHeight() - screenGetStrHeight(str)) / 2, 255, 255, 255);
-    screenEndDraw();
-    screenSwapBuffers(!quickSwap);
+    gpuViewport(screen, 0, 0, screen == TOP_SCREEN ? 400 : 320, 240);
+
+    gpuClear();
+    gputDrawString(str, (gpuGetViewportWidth() - gputGetStringWidth(str)) / 2, (gpuGetViewportHeight() - gputGetStringHeight(str)) / 2);
+    gpuFlush();
+    gpuFlushBuffer();
+    gpuSwapBuffers(!quickSwap);
+
+    gpuViewport(TOP_SCREEN, 0, 0, 400, 240);
 }
 
 RemoteFile uiAcceptRemoteFile(Screen screen, std::function<void(std::stringstream& infoStream)> onWait) {
