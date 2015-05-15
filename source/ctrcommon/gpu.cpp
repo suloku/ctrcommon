@@ -31,6 +31,7 @@ typedef struct {
     void* data;
     u32 size;
     u32 numVertices;
+    u32 bytesPerVertex;
     Primitive primitive;
 
     void* indices;
@@ -61,7 +62,14 @@ typedef struct {
     u32 constantColor;
 } TexEnv;
 
-static u32 nibblesPerFormatPixel[14] = {
+static u32 bytesPerAttrFormat[] = {
+    1, // ATTR_BYTE
+    1, // ATTR_UNSIGNED_BYTE
+    2, // ATTR_SHORT
+    4, // ATTR_FLOAT
+};
+
+static u32 nibblesPerPixelFormat[] = {
     8, // RGBA8
     6, // RGB8
     4, // RGBA5551
@@ -78,7 +86,7 @@ static u32 nibblesPerFormatPixel[14] = {
     2, // ETC1A4
 };
 
-static PixelFormat fbFormatToGPU[5] = {
+static PixelFormat fbFormatToGPU[] = {
     PIXEL_RGBA8, PIXEL_RGB8, PIXEL_RGB565, PIXEL_RGBA5551, PIXEL_RGBA4
 };
 
@@ -165,14 +173,14 @@ bool gpuInit() {
     viewportScreen = TOP_SCREEN;
     viewportX = 0;
     viewportY = 0;
-    viewportWidth = 400;
-    viewportHeight = 240;
+    viewportWidth = TOP_WIDTH;
+    viewportHeight = TOP_HEIGHT;
 
     scissorMode = SCISSOR_DISABLE;
     scissorX = 0;
     scissorY = 0;
-    scissorWidth = 400;
-    scissorHeight = 240;
+    scissorWidth = TOP_WIDTH;
+    scissorHeight = TOP_HEIGHT;
 
     depthNear = 0;
     depthFar = 1;
@@ -303,21 +311,19 @@ void gpuUpdateState() {
     }
 
     if((dirtyUpdate & STATE_TEX_ENV) && dirtyTexEnvs != 0) {
-        u32 texEnvs = dirtyTexEnvs;
-        dirtyTexEnvs = 0;
         for(u8 env = 0; env < TEX_ENV_COUNT; env++) {
-            if(texEnvs & (1 << env)) {
+            if(dirtyTexEnvs & (1 << env)) {
                 GPU_SetTexEnv(env, texEnv[env].rgbSources, texEnv[env].alphaSources, texEnv[env].rgbOperands, texEnv[env].alphaOperands, (GPU_COMBINEFUNC) texEnv[env].rgbCombine, (GPU_COMBINEFUNC) texEnv[env].alphaCombine, texEnv[env].constantColor);
             }
         }
+
+        dirtyTexEnvs = 0;
     }
 
     if((dirtyUpdate & STATE_TEXTURES) && dirtyTextures != 0) {
-        u32 textures = dirtyTextures;
-        dirtyTextures = 0;
         for(u8 unit = 0; unit < TEX_UNIT_COUNT; unit++) {
-            if(textures & (1 << unit)) {
-                TexUnit texUnit = unit == 0 ? TEXUNIT0 : unit == 1 ? TEXUNIT1 : TEXUNIT2;
+            TexUnit texUnit = (TexUnit) (1 << unit);
+            if(dirtyTextures & texUnit) {
                 TextureData* textureData = activeTextures[unit];
                 if(textureData != NULL && textureData->data != NULL) {
                     GPU_SetTexture((GPU_TEXUNIT) texUnit, (u32*) osConvertVirtToPhys((u32) textureData->data), (u16) textureData->height, (u16) textureData->width, textureData->params, (GPU_TEXCOLOR) textureData->format);
@@ -329,6 +335,7 @@ void gpuUpdateState() {
         }
 
         GPU_SetTextureEnable((GPU_TEXUNIT) enabledTextures);
+        dirtyTextures = 0;
     }
 }
 
@@ -355,6 +362,7 @@ void gpuFlushBuffer() {
     u16 fbWidth;
     u16 fbHeight;
     u32* fb = (u32*) gfxGetFramebuffer(screen, GFX_LEFT, &fbWidth, &fbHeight);
+
     GX_SetDisplayTransfer(NULL, gpuFrameBuffer, (viewportWidth << 16) | viewportHeight, fb, (fbHeight << 16) | fbWidth, (screenFormat << 12));
     gpuSafeWait(GSPEVENT_PPF);
 
@@ -362,6 +370,7 @@ void gpuFlushBuffer() {
         u16 fbWidthRight;
         u16 fbHeightRight;
         u32* fbRight = (u32*) gfxGetFramebuffer(screen, GFX_RIGHT, &fbWidthRight, &fbHeightRight);
+
         GX_SetDisplayTransfer(NULL, gpuFrameBuffer, (viewportWidth << 16) | viewportHeight, fbRight, (fbHeightRight << 16) | fbWidthRight, (screenFormat << 12));
         gpuSafeWait(GSPEVENT_PPF);
     }
@@ -375,8 +384,8 @@ void gpuSwapBuffers(bool vblank) {
 }
 
 void gpuClearScreens() {
-    u32 topSize = 400 * 240 * nibblesPerFormatPixel[fbFormatToGPU[gfxGetScreenFormat(GFX_TOP)]] / 2;
-    u32 bottomSize = 320 * 240 * nibblesPerFormatPixel[fbFormatToGPU[gfxGetScreenFormat(GFX_BOTTOM)]] / 2;
+    u32 topSize = TOP_WIDTH * TOP_HEIGHT * nibblesPerPixelFormat[fbFormatToGPU[gfxGetScreenFormat(GFX_TOP)]] / 2;
+    u32 bottomSize = BOTTOM_WIDTH * BOTTOM_HEIGHT * nibblesPerPixelFormat[fbFormatToGPU[gfxGetScreenFormat(GFX_BOTTOM)]] / 2;
     for(int buffer = 0; buffer < 2; buffer++) {
         u32* fbLeft = (u32*) gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL);
         memset(fbLeft, 0, topSize);
@@ -653,17 +662,23 @@ void gpuFreeVbo(u32 vbo) {
     free(vboData);
 }
 
-void gpuVboData(u32 vbo, const void* data, u32 size, u32 numVertices, Primitive primitive) {
-    if(data == NULL) {
-        return;
+void* gpuGetVboData(u32 vbo) {
+    VboData* vboData = (VboData*) vbo;
+    if(vboData == NULL) {
+        return NULL;
     }
 
+    return vboData->data;
+}
+
+void gpuVboDataInfo(u32 vbo, u32 numVertices, Primitive primitive) {
     VboData* vboData = (VboData*) vbo;
     if(vboData == NULL) {
         return;
     }
 
-    if(vboData->data == NULL || vboData->size != size) {
+    u32 size = numVertices * vboData->bytesPerVertex;
+    if(size != 0 && (vboData->data == NULL || vboData->size < size)) {
         if(vboData->data != NULL) {
             linearFree(vboData->data);
         }
@@ -671,20 +686,44 @@ void gpuVboData(u32 vbo, const void* data, u32 size, u32 numVertices, Primitive 
         vboData->data = linearMemAlign(size, 0x80);
     }
 
-    memcpy(vboData->data, data, size);
-
     vboData->size = size;
     vboData->numVertices = numVertices;
     vboData->primitive = primitive;
 }
 
-void gpuVboIndices(u32 vbo, const void* data, u32 size) {
+void gpuVboData(u32 vbo, const void* data, u32 numVertices, Primitive primitive) {
     VboData* vboData = (VboData*) vbo;
     if(vboData == NULL) {
         return;
     }
 
+    gpuVboDataInfo(vbo, numVertices, primitive);
     if(data == NULL) {
+        return;
+    }
+
+    u32 size = numVertices * vboData->bytesPerVertex;
+    if(size > 0) {
+        memcpy(vboData->data, data, size);
+    }
+}
+
+void* gpuGetVboIndices(u32 vbo) {
+    VboData* vboData = (VboData*) vbo;
+    if(vboData == NULL) {
+        return NULL;
+    }
+
+    return vboData->indices;
+}
+
+void gpuVboIndicesInfo(u32 vbo, u32 size) {
+    VboData* vboData = (VboData*) vbo;
+    if(vboData == NULL) {
+        return;
+    }
+
+    if(size == 0) {
         if(vboData->indices != NULL) {
             linearFree(vboData->indices);
             vboData->indices = NULL;
@@ -694,7 +733,7 @@ void gpuVboIndices(u32 vbo, const void* data, u32 size) {
         return;
     }
 
-    if(vboData->indices == NULL || vboData->indicesSize != size) {
+    if(vboData->indices == NULL || vboData->indicesSize < size) {
         if(vboData->indices != NULL) {
             linearFree(vboData->indices);
         }
@@ -702,9 +741,21 @@ void gpuVboIndices(u32 vbo, const void* data, u32 size) {
         vboData->indices = linearMemAlign(size, 0x80);
     }
 
-    memcpy(vboData->indices, data, size);
-
     vboData->indicesSize = size;
+}
+
+void gpuVboIndices(u32 vbo, const void* data, u32 size) {
+    VboData* vboData = (VboData*) vbo;
+    if(vboData == NULL) {
+        return;
+    }
+
+    gpuVboIndicesInfo(vbo, data != NULL ? size : 0);
+    if(data == NULL) {
+        return;
+    }
+
+    memcpy(vboData->indices, data, size);
 }
 
 void gpuVboAttributes(u32 vbo, u64 attributes, u8 attributeCount) {
@@ -717,8 +768,14 @@ void gpuVboAttributes(u32 vbo, u64 attributes, u8 attributeCount) {
     vboData->attributeCount = attributeCount;
     vboData->attributeMask = 0xFFC;
     vboData->attributePermutations = 0;
+    vboData->bytesPerVertex = 0;
     for(u32 i = 0; i < vboData->attributeCount; i++) {
         vboData->attributePermutations |= i << (i * 4);
+
+        u8 data = (u8) ((attributes >> (i * 4)) & 0xF);
+        u8 components = (u8) (((data >> 2) & 3) + 1);
+        AttributeType type = (AttributeType) (data & 3);
+        vboData->bytesPerVertex += components * bytesPerAttrFormat[type];
     }
 }
 
@@ -793,9 +850,9 @@ void gpuTextureInfo(u32 texture, u32 width, u32 height, PixelFormat format, u32 
         return;
     }
 
-    bool dirty = false;
-    u32 size = (u32) (width * height * nibblesPerFormatPixel[format] / 2);
-    if(textureData->data == NULL || textureData->size != size) {
+    u32 size = (u32) (width * height * nibblesPerPixelFormat[format] / 2);
+    bool dirty = textureData->data == NULL || width != textureData->width || height != textureData->height || format != textureData->format || params != textureData->params;
+    if(textureData->data == NULL || textureData->size < size) {
         if(textureData->data != NULL) {
             linearFree(textureData->data);
         }
@@ -805,10 +862,6 @@ void gpuTextureInfo(u32 texture, u32 width, u32 height, PixelFormat format, u32 
             return;
         }
 
-        dirty = true;
-    }
-
-    if(format != textureData->format || params != textureData->params || width != textureData->width || height != textureData->height) {
         dirty = true;
     }
 
@@ -836,7 +889,7 @@ void gpuTextureData(u32 texture, const void* data, u32 width, u32 height, PixelF
 
     gpuTextureInfo(texture, width, height, format, params);
 
-    u32 size = (u32) (width * height * nibblesPerFormatPixel[format] / 2);
+    u32 size = (u32) (width * height * nibblesPerPixelFormat[format] / 2);
     u32 flags = (u32) ((1 << 1) | (format << 8) | (format << 12));
 
     GSPGPU_FlushDataCache(NULL, (u8*) data, size);
@@ -845,7 +898,7 @@ void gpuTextureData(u32 texture, const void* data, u32 width, u32 height, PixelF
 }
 
 void gpuBindTexture(TexUnit unit, u32 texture) {
-    u32 unitIndex = unit == TEXUNIT0 ? 0 : unit == TEXUNIT1 ? 1 : 2;
+    u32 unitIndex = unit >> 1;
     if(activeTextures[unitIndex] != (TextureData*) texture) {
         activeTextures[unitIndex] = (TextureData*) texture;
 

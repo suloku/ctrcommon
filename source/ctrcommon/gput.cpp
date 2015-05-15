@@ -17,8 +17,6 @@ u32 tempVbo = 0;
 u32 dummyTexture = 0;
 u32 fontTexture = 0;
 
-float* charVbo;
-
 void gputInit() {
     gpuCreateShader(&defaultShader);
     gpuLoadShader(defaultShader, ctrcommon_shader_vsh_shbin, ctrcommon_shader_vsh_shbin_size);
@@ -36,9 +34,6 @@ void gputInit() {
     gpuCreateTexture(&fontTexture);
     gpuTextureData(fontTexture, gpuFont, 128, 128, PIXEL_RGBA8, TEXTURE_MIN_FILTER(FILTER_NEAREST) | TEXTURE_MAG_FILTER(FILTER_NEAREST));
     gpuFree(gpuFont);
-
-    // charsX * charsY * verticesPerChar * floatsPerVertex * sizeof(float)
-    charVbo = (float*) malloc(50 * 30 * 6 * 9 * sizeof(float));
 }
 
 void gputCleanup() {
@@ -55,11 +50,6 @@ void gputCleanup() {
     if(fontTexture != 0) {
         gpuFreeTexture(fontTexture);
         fontTexture = 0;
-    }
-
-    if(charVbo != NULL) {
-        free(charVbo);
-        charVbo = NULL;
     }
 }
 
@@ -149,12 +139,16 @@ void gputDrawString(const std::string str, int x, int y, float scale, u8 red, u8
     const float a = (float) alpha / 255.0f;
 
     u32 len = str.length();
+    gpuVboDataInfo(tempVbo, len * 6, PRIM_TRIANGLES);
+    float* tempVboData = (float*) gpuGetVboData(tempVbo);
+
     float cx = x;
     float cy = y + gputGetStringHeight(str, scale) - 8;
-    u32 vboIndex = 0;
     for(u32 i = 0; i < len; i++) {
         char c = str[i];
         if(c == '\n') {
+            memset(tempVboData + (i * 6 * 9), 0, 6 * 9 * sizeof(float));
+
             cx = x;
             cy -= size;
             continue;
@@ -174,12 +168,9 @@ void gputDrawString(const std::string str, int x, int y, float scale, u8 red, u8
                 cx, cy, -0.1f, texX1, texY1, r, g, b, a
         };
 
-        memcpy(charVbo + (vboIndex * 6 * 9), vboData, sizeof(vboData));
+        memcpy(tempVboData + (i * 6 * 9), vboData, sizeof(vboData));
         cx += size;
-        vboIndex++;
     }
-
-    gpuVboData(tempVbo, charVbo, vboIndex * 6 * 9 * sizeof(float), vboIndex * 6, PRIM_TRIANGLES);
 
     gpuBindTexture(TEXUNIT0, fontTexture);
     gpuDrawVbo(tempVbo);
@@ -203,7 +194,7 @@ void gputDrawRectangle(int x, int y, u32 width, u32 height, u8 red, u8 green, u8
             (float) x, (float) y, -0.1f, 0.0f, 0.0f, r, g, b, a
     };
 
-    gpuVboData(tempVbo, vboData, sizeof(vboData), sizeof(vboData) / (9 * 4), PRIM_TRIANGLES);
+    gpuVboData(tempVbo, vboData, 6 * 9, PRIM_TRIANGLES);
 
     gpuBindTexture(TEXUNIT0, dummyTexture);
     gpuDrawVbo(tempVbo);

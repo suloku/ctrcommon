@@ -5,7 +5,10 @@
 
 #include <string>
 
-// TODO: error reporting system
+#define TOP_WIDTH 400
+#define TOP_HEIGHT 240
+#define BOTTOM_WIDTH 320
+#define BOTTOM_HEIGHT 240
 
 #define ATTRIBUTE(i, n, f) (((((n)-1)<<2)|((f)&3))<<((i)*4))
 
@@ -197,7 +200,11 @@ void gpuSetUniform(u32 shader, ShaderType type, const char* name, const float* d
 
 void gpuCreateVbo(u32* vbo);
 void gpuFreeVbo(u32 vbo);
-void gpuVboData(u32 vbo, const void* data, u32 size, u32 numVertices, Primitive primitive);
+void* gpuGetVboData(u32 vbo);
+void gpuVboDataInfo(u32 vbo, u32 numVertices, Primitive primitive);
+void gpuVboData(u32 vbo, const void* data, u32 numVertices, Primitive primitive);
+void* gpuGetVboIndices(u32 vbo);
+void gpuVboIndicesInfo(u32 vbo, u32 size);
 void gpuVboIndices(u32 vbo, const void* data, u32 size);
 void gpuVboAttributes(u32 vbo, u64 attributes, u8 attributeCount);
 void gpuDrawVbo(u32 vbo);
