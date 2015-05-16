@@ -846,12 +846,11 @@ void* gpuGetTextureData(u32 texture) {
 
 void gpuTextureInfo(u32 texture, u32 width, u32 height, PixelFormat format, u32 params) {
     TextureData* textureData = (TextureData*) texture;
-    if(textureData == NULL) {
+    if(textureData == NULL || (textureData->data != NULL && width == textureData->width && height == textureData->height && format == textureData->format && params == textureData->params)) {
         return;
     }
 
     u32 size = (u32) (width * height * nibblesPerPixelFormat[format] / 2);
-    bool dirty = textureData->data == NULL || width != textureData->width || height != textureData->height || format != textureData->format || params != textureData->params;
     if(textureData->data == NULL || textureData->size < size) {
         if(textureData->data != NULL) {
             linearFree(textureData->data);
@@ -861,8 +860,6 @@ void gpuTextureInfo(u32 texture, u32 width, u32 height, PixelFormat format, u32 
         if(textureData->data == NULL) {
             return;
         }
-
-        dirty = true;
     }
 
     textureData->width = width;
@@ -871,12 +868,10 @@ void gpuTextureInfo(u32 texture, u32 width, u32 height, PixelFormat format, u32 
     textureData->format = format;
     textureData->params = params;
 
-    if(dirty) {
-        for(u8 unit = 0; unit < TEX_UNIT_COUNT; unit++) {
-            if(activeTextures[unit] == textureData) {
-                dirtyState |= STATE_TEXTURES;
-                dirtyTextures |= (1 << unit);
-            }
+    for(u8 unit = 0; unit < TEX_UNIT_COUNT; unit++) {
+        if(activeTextures[unit] == textureData) {
+            dirtyState |= STATE_TEXTURES;
+            dirtyTextures |= (1 << unit);
         }
     }
 }
@@ -889,11 +884,8 @@ void gpuTextureData(u32 texture, const void* data, u32 width, u32 height, PixelF
 
     gpuTextureInfo(texture, width, height, format, params);
 
-    u32 size = (u32) (width * height * nibblesPerPixelFormat[format] / 2);
-    u32 flags = (u32) ((1 << 1) | (format << 8) | (format << 12));
-
-    GSPGPU_FlushDataCache(NULL, (u8*) data, size);
-    GX_SetDisplayTransfer(NULL, (u32*) data, (height << 16) | width, (u32*) textureData->data, (height << 16) | width, flags);
+    GSPGPU_FlushDataCache(NULL, (u8*) data, (u32) (width * height * nibblesPerPixelFormat[format] / 2));
+    GX_SetDisplayTransfer(NULL, (u32*) data, (height << 16) | width, (u32*) textureData->data, (height << 16) | width, (u32) ((1 << 1) | (format << 8) | (format << 12)));
     gpuSafeWait(GSPEVENT_PPF);
 }
 
