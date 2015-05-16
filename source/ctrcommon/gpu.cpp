@@ -877,6 +877,10 @@ void gpuTextureInfo(u32 texture, u32 width, u32 height, PixelFormat format, u32 
 }
 
 void gpuTextureData(u32 texture, const void* data, u32 width, u32 height, PixelFormat format, u32 params) {
+    if(data == NULL) {
+        return;
+    }
+
     TextureData* textureData = (TextureData*) texture;
     if(textureData == NULL) {
         return;

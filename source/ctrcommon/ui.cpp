@@ -24,7 +24,7 @@ struct uiAlphabetize {
     }
 };
 
-bool uiSelect(SelectableElement* selected, std::vector<SelectableElement> elements, std::function<bool(std::vector<SelectableElement> &currElements, bool &elementsDirty, bool &resetCursorIfDirty)> onLoop, std::function<bool(SelectableElement select)> onSelect, bool useTopScreen, bool alphabetize) {
+bool uiSelect(SelectableElement* selected, std::vector<SelectableElement> elements, std::function<bool(std::vector<SelectableElement> &currElements, SelectableElement currElement, bool &elementsDirty, bool &resetCursorIfDirty)> onLoop, std::function<bool(SelectableElement select)> onSelect, bool useTopScreen, bool alphabetize) {
     int cursor = 0;
     int scroll = 0;
 
@@ -39,6 +39,8 @@ bool uiSelect(SelectableElement* selected, std::vector<SelectableElement> elemen
         std::sort(elements.begin(), elements.end(), uiAlphabetize());
     }
 
+    bool canPageUp = false;
+    bool canPageDown = false;
     while(platformIsRunning()) {
         inputPoll();
         if(inputIsPressed(BUTTON_A)) {
@@ -49,7 +51,19 @@ bool uiSelect(SelectableElement* selected, std::vector<SelectableElement> elemen
             }
         }
 
-        if(inputIsHeld(BUTTON_DOWN) || inputIsHeld(BUTTON_UP) || inputIsHeld(BUTTON_LEFT) || inputIsHeld(BUTTON_RIGHT)) {
+        if(canPageUp) {
+            canPageUp = !inputIsReleased(BUTTON_L);
+        } else if(inputIsPressed(BUTTON_L)) {
+            canPageUp = true;
+        }
+
+        if(canPageDown) {
+            canPageDown = !inputIsReleased(BUTTON_R);
+        } else if(inputIsPressed(BUTTON_R)) {
+            canPageDown = true;
+        }
+
+        if(inputIsHeld(BUTTON_DOWN) || inputIsHeld(BUTTON_UP) || (inputIsHeld(BUTTON_L) && canPageUp) || (inputIsHeld(BUTTON_R) && canPageDown)) {
             if(lastScrollTime == 0 || platformGetTime() - lastScrollTime >= 180) {
                 if(inputIsHeld(BUTTON_DOWN) && cursor < (int) elements.size() - 1) {
                     cursor++;
@@ -58,7 +72,7 @@ bool uiSelect(SelectableElement* selected, std::vector<SelectableElement> elemen
                     }
                 }
 
-                if(inputIsHeld(BUTTON_RIGHT) && cursor < (int) elements.size() - 1) {
+                if(canPageDown && inputIsHeld(BUTTON_R) && cursor < (int) elements.size() - 1) {
                     cursor += 20;
                     if(cursor >= (int) elements.size()) {
                         cursor = elements.size() - 1;
@@ -83,7 +97,7 @@ bool uiSelect(SelectableElement* selected, std::vector<SelectableElement> elemen
                     }
                 }
 
-                if(inputIsHeld(BUTTON_LEFT) && cursor > 0) {
+                if(canPageUp && inputIsHeld(BUTTON_L) && cursor > 0) {
                     cursor -= 20;
                     if(cursor < 0) {
                         cursor = 0;
@@ -155,7 +169,7 @@ bool uiSelect(SelectableElement* selected, std::vector<SelectableElement> elemen
             }
         }
 
-        bool result = onLoop != NULL && onLoop(elements, elementsDirty, resetCursorIfDirty);
+        bool result = onLoop != NULL && onLoop(elements, elements.at((u32) cursor), elementsDirty, resetCursorIfDirty);
         if(elementsDirty) {
             if(resetCursorIfDirty) {
                 cursor = 0;
@@ -230,7 +244,7 @@ bool uiSelectFile(std::string* selectedFile, const std::string rootDirectory, st
     bool updateContents = false;
     bool resetCursor = true;
     SelectableElement selected;
-    bool result = uiSelect(&selected, elements, [&](std::vector<SelectableElement> &currElements, bool &elementsDirty, bool &resetCursorIfDirty) {
+    bool result = uiSelect(&selected, elements, [&](std::vector<SelectableElement> &currElements, SelectableElement currElement, bool &elementsDirty, bool &resetCursorIfDirty) {
         if(onLoop != NULL && onLoop(currDirectory, directoryStack.empty(), updateContents)) {
             return true;
         }
@@ -339,7 +353,7 @@ bool uiSelectApp(App* selectedApp, MediaType mediaType, std::function<bool(bool 
 
     bool updateContents = false;
     SelectableElement selected;
-    bool result = uiSelect(&selected, elements, [&](std::vector<SelectableElement> &currElements, bool &elementsDirty, bool &resetCursorIfDirty) {
+    bool result = uiSelect(&selected, elements, [&](std::vector<SelectableElement> &currElements, SelectableElement currElement, bool &elementsDirty, bool &resetCursorIfDirty) {
         if(onLoop != NULL && onLoop(updateContents)) {
             return true;
         }
