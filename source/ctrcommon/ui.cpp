@@ -229,6 +229,32 @@ void uiGetDirContents(std::vector<SelectableElement> &elements, const std::strin
             std::stringstream stream;
             stream << "File Size: " << ((u32) st.st_size) << " bytes (" << std::fixed << std::setprecision(2) << ((u32) st.st_size) / 1024.0f / 1024.0f << "MB)";
             info.push_back(stream.str());
+
+            std::string extension = fsGetExtension(path);
+            if(extension.compare("cia") == 0) {
+                App app = appGetCiaInfo(path);
+
+                std::stringstream titleId;
+                titleId << "0x" << std::setfill('0') << std::setw(16) << std::hex << app.titleId;
+
+                std::stringstream uniqueId;
+                uniqueId << "0x" << std::setfill('0') << std::setw(8) << std::hex << app.uniqueId;
+
+                std::stringstream version;
+                version << "0x" << std::setfill('0') << std::hex << app.version;
+
+                std::stringstream size;
+                size << "" << app.size << " bytes (" << std::fixed << std::setprecision(2) << app.size / 1024.0f / 1024.0f << "MB)";
+
+                info.push_back("Installed Size: " + size.str());
+                info.push_back("Title ID: " + titleId.str());
+                info.push_back("Unique ID: " + uniqueId.str());
+                info.push_back("Product Code: " + std::string(app.productCode));
+                info.push_back("Platform: " + appGetPlatformName(app.platform));
+                info.push_back("Category: " + appGetCategoryName(app.category));
+                info.push_back("Version: " + version.str());
+            }
+
             elements.push_back({path, name, info});
         }
     }

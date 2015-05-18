@@ -48,14 +48,23 @@ bool fsIsDirectory(const std::string path) {
     return false;
 }
 
+std::string fsGetExtension(const std::string path) {
+    std::string::size_type dotPos = path.rfind('.');
+    if(dotPos == std::string::npos) {
+        return "";
+    }
+
+    return path.substr(dotPos + 1);
+}
+
 bool fsHasExtension(const std::string path, const std::string extension) {
     std::string::size_type dotPos = path.rfind('.');
     return dotPos != std::string::npos && path.substr(dotPos + 1).compare(extension) == 0;
 }
 
 bool fsHasExtensions(const std::string path, const std::vector<std::string> extensions) {
-    std::string::size_type dotPos = path.rfind('.');
-    return extensions.empty() || (dotPos != std::string::npos && std::find(extensions.begin(), extensions.end(), path.substr(dotPos + 1)) != extensions.end());
+    std::string extension = fsGetExtension(path);
+    return extensions.empty() || (extension.compare("") != 0 && std::find(extensions.begin(), extensions.end(), extension) != extensions.end());
 }
 
 std::vector<FileInfo> fsGetDirectoryContents(const std::string directory) {

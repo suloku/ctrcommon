@@ -113,6 +113,47 @@ const std::string appGetCategoryName(AppCategory category) {
     }
 }
 
+App appGetCiaInfo(const std::string file) {
+    if(!serviceRequire("am")) {
+        return {};
+    }
+
+    FS_archive archive = (FS_archive) {ARCH_SDMC, (FS_path) {PATH_EMPTY, 1, (u8*) ""}};
+    Result archiveResult = FSUSER_OpenArchive(NULL, &archive);
+    if(archiveResult != 0) {
+        platformSetError(serviceParseError((u32) archiveResult));
+        return {};
+    }
+
+    Handle handle = 0;
+    Result openResult = FSUSER_OpenFile(NULL, &handle, archive, FS_makePath(PATH_CHAR, file.c_str()), FS_OPEN_READ, FS_ATTRIBUTE_NONE);
+    if(openResult != 0) {
+        platformSetError(serviceParseError((u32) openResult));
+        return {};
+    }
+
+    TitleList titleInfo;
+    Result infoResult = AM_GetCiaFileInfo(mediatype_SDMC, &titleInfo, handle);
+    if(infoResult != 0) {
+        platformSetError(serviceParseError((u32) infoResult));
+        return {};
+    }
+
+    FSFILE_Close(handle);
+    FSUSER_CloseArchive(NULL, &archive);
+
+    App app;
+    app.titleId = titleInfo.titleID;
+    app.uniqueId = ((u32*) &titleInfo.titleID)[0];
+    strcpy(app.productCode, "<N/A>");
+    app.mediaType = SD;
+    app.platform = appPlatformFromId(((u16*) &titleInfo.titleID)[3]);
+    app.category = appCategoryFromId(((u16*) &titleInfo.titleID)[2]);
+    app.version = titleInfo.titleVersion;
+    app.size = titleInfo.size;
+    return app;
+}
+
 std::vector<App> appList(MediaType mediaType) {
     std::vector<App> titles;
     if(!serviceRequire("am")) {
@@ -142,6 +183,7 @@ std::vector<App> appList(MediaType mediaType) {
 
     for(u32 i = 0; i < titleCount; i++) {
         u64 titleId = titleList[i].titleID;
+
         App app;
         app.titleId = titleId;
         app.uniqueId = ((u32*) &titleId)[0];
