@@ -16,7 +16,7 @@
 #include "ctrcommon_font_bin.h"
 
 u32 defaultShader = 0;
-u32 tempVbo = 0;
+u32 stringVbo = 0;
 u32 dummyTexture = 0;
 u32 fontTexture = 0;
 
@@ -31,8 +31,8 @@ void gputInit() {
     gpuLoadShader(defaultShader, ctrcommon_shader_vsh_shbin, ctrcommon_shader_vsh_shbin_size);
     gputUseDefaultShader();
 
-    gpuCreateVbo(&tempVbo);
-    gpuVboAttributes(tempVbo, ATTRIBUTE(0, 3, ATTR_FLOAT) | ATTRIBUTE(1, 2, ATTR_FLOAT) | ATTRIBUTE(2, 4, ATTR_FLOAT), 3);
+    gpuCreateVbo(&stringVbo);
+    gpuVboAttributes(stringVbo, ATTRIBUTE(0, 3, ATTR_FLOAT) | ATTRIBUTE(1, 2, ATTR_FLOAT) | ATTRIBUTE(2, 4, ATTR_FLOAT), 3);
 
     gpuCreateTexture(&dummyTexture);
     gpuTextureInfo(dummyTexture, 64, 64, PIXEL_RGBA8, TEXTURE_MIN_FILTER(FILTER_NEAREST) | TEXTURE_MAG_FILTER(FILTER_NEAREST));
@@ -56,9 +56,9 @@ void gputCleanup() {
         defaultShader = 0;
     }
 
-    if(tempVbo != 0) {
-        gpuFreeVbo(tempVbo);
-        tempVbo = 0;
+    if(stringVbo != 0) {
+        gpuFreeVbo(stringVbo);
+        stringVbo = 0;
     }
 
     if(fontTexture != 0) {
@@ -416,8 +416,8 @@ void gputDrawString(const std::string str, float x, float y, float charWidth, fl
     const float a = (float) alpha / 255.0f;
 
     u32 len = str.length();
-    gpuVboDataInfo(tempVbo, len * 6, PRIM_TRIANGLES);
-    float* tempVboData = (float*) gpuGetVboData(tempVbo);
+    gpuVboDataInfo(stringVbo, len * 6, PRIM_TRIANGLES);
+    float* tempVboData = (float*) gpuGetVboData(stringVbo);
 
     float cx = x;
     float cy = y + gputGetStringHeight(str, charHeight) - 8;
@@ -450,31 +450,7 @@ void gputDrawString(const std::string str, float x, float y, float charWidth, fl
     }
 
     gpuBindTexture(TEXUNIT0, fontTexture);
-    gpuDrawVbo(tempVbo);
-
-    // Flush the GPU command buffer so we can safely reuse the VBO.
-    gpuFlush();
-}
-
-void gputDrawRectangle(float x, float y, float width, float height, u8 red, u8 green, u8 blue, u8 alpha) {
-    const float r = (float) red / 255.0f;
-    const float g = (float) green / 255.0f;
-    const float b = (float) blue / 255.0f;
-    const float a = (float) alpha / 255.0f;
-
-    const float vboData[] = {
-            x, y, -0.1f, 0.0f, 0.0f, r, g, b, a,
-            x + width, y, -0.1f, 1.0f, 0.0f, r, g, b, a,
-            x + width, y + height, -0.1f, 1.0f, 1.0f, r, g, b, a,
-            x + width, y + height, -0.1f, 1.0f, 1.0f, r, g, b, a,
-            x, y + height, -0.1f, 0.0f, 1.0f, r, g, b, a,
-            x, y, -0.1f, 0.0f, 0.0f, r, g, b, a
-    };
-
-    gpuVboData(tempVbo, vboData, 6 * 9, PRIM_TRIANGLES);
-
-    gpuBindTexture(TEXUNIT0, dummyTexture);
-    gpuDrawVbo(tempVbo);
+    gpuDrawVbo(stringVbo);
 
     // Flush the GPU command buffer so we can safely reuse the VBO.
     gpuFlush();

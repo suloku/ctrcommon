@@ -16,11 +16,23 @@
 
 static Error* currentError;
 
+extern bool gpuInit();
+extern void gpuCleanup();
+
+extern void uiInit();
+extern void uiCleanup();
+
 bool platformInit() {
-    return gpuInit();
+    if(gpuInit()) {
+        uiInit();
+        return true;
+    }
+
+    return false;
 }
 
 void platformCleanup() {
+    uiCleanup();
     gpuCleanup();
     serviceCleanup();
 }

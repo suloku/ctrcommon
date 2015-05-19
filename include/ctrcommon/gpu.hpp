@@ -152,9 +152,6 @@ typedef enum {
     SCISSOR_NORMAL = 0x3
 } ScissorMode;
 
-bool gpuInit();
-void gpuCleanup();
-
 void* gpuAlloc(u32 size);
 void gpuFree(void* mem);
 
@@ -256,8 +253,6 @@ void gputScale(float x, float y, float z);
 float gputGetStringWidth(const std::string str, float charWidth);
 float gputGetStringHeight(const std::string str, float charHeight);
 void gputDrawString(const std::string str, float x, float y, float charWidth, float charHeight, u8 red = 0xFF, u8 green = 0xFF, u8 blue = 0xFF, u8 alpha = 0xFF);
-
-void gputDrawRectangle(float x, float y, float width, float height, u8 red = 0xFF, u8 green = 0xFF, u8 blue = 0xFF, u8 alpha = 0xFF);
 
 void gputTakeScreenshot();
 

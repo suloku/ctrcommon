@@ -24,6 +24,41 @@ struct uiAlphabetize {
     }
 };
 
+u32 selectorTexture;
+u32 selectorVbo;
+
+void uiInit() {
+    gpuCreateTexture(&selectorTexture);
+    gpuTextureInfo(selectorTexture, 64, 64, PIXEL_RGBA8, TEXTURE_MIN_FILTER(FILTER_NEAREST) | TEXTURE_MAG_FILTER(FILTER_NEAREST));
+    memset(gpuGetTextureData(selectorTexture), 0xFF, 64 * 64 * 4);
+
+    gpuCreateVbo(&selectorVbo);
+    gpuVboAttributes(selectorVbo, ATTRIBUTE(0, 3, ATTR_FLOAT) | ATTRIBUTE(1, 2, ATTR_FLOAT) | ATTRIBUTE(2, 4, ATTR_FLOAT), 3);
+
+    const float vboData[] = {
+            0.0f, 0.0f, -0.1f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+            320.0f, 0.0f, -0.1f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+            320.0f, 12.0f, -0.1f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+            320.0f, 12.0f, -0.1f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+            0.0f, 12.0f, -0.1f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+            0.0f, 0.0f, -0.1f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+    };
+
+    gpuVboData(selectorVbo, vboData, 6 * 9, PRIM_TRIANGLES);
+}
+
+void uiCleanup() {
+    if(selectorTexture != 0) {
+        gpuFreeTexture(selectorTexture);
+        selectorTexture = 0;
+    }
+
+    if(selectorVbo != 0) {
+        gpuFreeVbo(selectorVbo);
+        selectorVbo = 0;
+    }
+}
+
 bool uiSelect(SelectableElement* selected, std::vector<SelectableElement> elements, std::function<bool(std::vector<SelectableElement> &currElements, SelectableElement currElement, bool &elementsDirty, bool &resetCursorIfDirty)> onLoop, std::function<bool(SelectableElement select)> onSelect, bool useTopScreen, bool alphabetize) {
     int cursor = 0;
     int scroll = 0;
@@ -132,7 +167,13 @@ bool uiSelect(SelectableElement* selected, std::vector<SelectableElement> elemen
             float itemHeight = gputGetStringHeight(element.name, 8) + 4;
             if(index == cursor) {
                 color = 0;
-                gputDrawRectangle(0, (screenHeight - 1) - ((index - scroll + 1) * itemHeight), screenWidth, itemHeight);
+
+                gputPushModelView();
+                gputTranslate(0, (screenHeight - 1) - ((index - scroll + 1) * itemHeight), 0);
+                gpuBindTexture(TEXUNIT0, selectorTexture);
+                gpuDrawVbo(selectorVbo);
+                gputPopModelView();
+
                 u32 width = (u32) gputGetStringWidth(element.name, 8);
                 if(width > screenWidth) {
                     if(selectionScroll + screenWidth >= width) {
