@@ -26,6 +26,11 @@ typedef enum {
 } Screen;
 
 typedef enum {
+    LEFT_SCREEN,
+    RIGHT_SCREEN
+} ScreenSide;
+
+typedef enum {
     CULL_NONE = 0x0,
     CULL_FRONT_CCW = 0x1,
     CULL_BACK_CCW = 0x2
@@ -164,6 +169,9 @@ void gpuClear();
 
 void gpuClearColor(u8 red, u8 green, u8 blue, u8 alpha);
 void gpuClearDepth(u32 depth);
+
+void gpuSet3d(bool enable3d);
+void gpuScreenSide(ScreenSide side);
 
 int gpuGetViewportWidth();
 int gpuGetViewportHeight();

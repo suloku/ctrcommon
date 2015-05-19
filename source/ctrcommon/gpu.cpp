@@ -154,6 +154,9 @@ TexEnv texEnv[TEX_ENV_COUNT];
 TextureData* activeTextures[TEX_UNIT_COUNT];
 u32 enabledTextures;
 
+bool allow3d;
+ScreenSide screenSide;
+
 extern void gputInit();
 extern void gputCleanup();
 
@@ -239,6 +242,9 @@ bool gpuInit() {
     }
 
     enabledTextures = 0;
+
+    allow3d = false;
+    screenSide = LEFT_SCREEN;
 
     gfxSet3D(true);
 
@@ -355,16 +361,17 @@ void gpuFlush() {
 
 void gpuFlushBuffer() {
     gfxScreen_t screen = viewportScreen == TOP_SCREEN ? GFX_TOP : GFX_BOTTOM;
+    gfx3dSide_t side = allow3d && viewportScreen == TOP_SCREEN && screenSide == RIGHT_SCREEN ? GFX_RIGHT : GFX_LEFT;
     PixelFormat screenFormat = fbFormatToGPU[gfxGetScreenFormat(screen)];
 
     u16 fbWidth;
     u16 fbHeight;
-    u32* fb = (u32*) gfxGetFramebuffer(screen, GFX_LEFT, &fbWidth, &fbHeight);
+    u32* fb = (u32*) gfxGetFramebuffer(screen, side, &fbWidth, &fbHeight);
 
     GX_SetDisplayTransfer(NULL, gpuFrameBuffer, (viewportWidth << 16) | viewportHeight, fb, (fbHeight << 16) | fbWidth, (screenFormat << 12));
     gpuSafeWait(GSPEVENT_PPF);
 
-    if(screen == GFX_TOP) {
+    if(viewportScreen == TOP_SCREEN && !allow3d) {
         u16 fbWidthRight;
         u16 fbHeightRight;
         u32* fbRight = (u32*) gfxGetFramebuffer(screen, GFX_RIGHT, &fbWidthRight, &fbHeightRight);
@@ -409,6 +416,14 @@ void gpuClearColor(u8 red, u8 green, u8 blue, u8 alpha) {
 
 void gpuClearDepth(u32 depth) {
     clearDepth = depth;
+}
+
+void gpuSet3d(bool enable3d) {
+    allow3d = enable3d;
+}
+
+void gpuScreenSide(ScreenSide side) {
+    screenSide = side;
 }
 
 int gpuGetViewportWidth() {
