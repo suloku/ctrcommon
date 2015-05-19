@@ -156,7 +156,6 @@ u32 enabledTextures;
 
 extern void gputInit();
 extern void gputCleanup();
-extern void gputUpdateViewport(u32 width, u32 height);
 
 bool gpuInit() {
     if(!serviceRequire("gfx")) {
@@ -273,7 +272,6 @@ void gpuUpdateState() {
 
     if(dirtyUpdate & STATE_VIEWPORT) {
         GPU_SetViewport((u32*) osConvertVirtToPhys((u32) gpuDepthBuffer), (u32*) osConvertVirtToPhys((u32) gpuFrameBuffer), viewportX, viewportY, viewportHeight, viewportWidth);
-        gputUpdateViewport(viewportWidth, viewportHeight);
     }
 
     if(dirtyUpdate & STATE_SCISSOR_TEST) {

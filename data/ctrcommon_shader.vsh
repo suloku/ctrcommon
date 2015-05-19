@@ -8,16 +8,22 @@
 
 ; setup uniform map (not required)
 	.uniform c0, c3, projection
+	.uniform c4, c7, modelview
 
 	.vsh vmain, end_vmain
 
 ; code
 	vmain:
-		; result.pos = projection * in.pos
-		dp4 o0, c0, v0 (0x0)
-		dp4 o0, c1, v0 (0x1)
-		dp4 o0, c2, v0 (0x2)
-		dp4 o0, c3, v0 (0x3)
+		; temp = modelview * in.pos
+		dp4 r0, c4, v0 (0x0)
+		dp4 r0, c5, v0 (0x1)
+		dp4 r0, c6, v0 (0x2)
+		mov r0, c20 (0x3)
+		; result.pos = projection * temp
+		dp4 o0, c0, r0 (0x0)
+		dp4 o0, c1, r0 (0x1)
+		dp4 o0, c2, r0 (0x2)
+		dp4 o0, c3, r0 (0x3)
 		; result.color = in.color
 		mov o1, v2 (0x5)
 		; result.texcoord = in.texcoord

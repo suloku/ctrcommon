@@ -224,10 +224,41 @@ void gpuBindTexture(TexUnit unit, u32 texture);
 // GPUT - GPU Tools
 
 void gputUseDefaultShader();
-int gputGetStringWidth(const std::string str, float scale = 1);
-int gputGetStringHeight(const std::string str, float scale = 1);
-void gputDrawString(const std::string str, int x, int y, float scale = 1, u8 red = 0xFF, u8 green = 0xFF, u8 blue = 0xFF, u8 alpha = 0xFF);
-void gputDrawRectangle(int x, int y, u32 width, u32 height, u8 red = 0xFF, u8 green = 0xFF, u8 blue = 0xFF, u8 alpha = 0xFF);
+
+void gputMultMatrix4(float* out, const float* m1, const float* m2);
+void gputIdentityMatrix(float *out);
+void gputOrthoMatrix(float* out, float left, float right, float bottom, float top, float near, float far);
+void gputPerspectiveMatrix(float* out, float fovy, float aspect, float near, float far);
+void gputTranslationMatrix(float* out, float x, float y, float z);
+void gputRotationMatrixX(float* out, float rotation);
+void gputRotationMatrixY(float* out, float rotation);
+void gputRotationMatrixZ(float* out, float rotation);
+void gputScaleMatrix(float *out, float x, float y, float z);
+
+void gputPushProjection();
+void gputPopProjection();
+float* gputGetProjection();
+void gputProjection(float* matrix);
+void gputOrtho(float left, float right, float bottom, float top, float near, float far);
+void gputPerspective(float fovy, float aspect, float near, float far);
+
+void gputPushModelView();
+void gputPopModelView();
+float* gputGetModelView();
+void gputModelView(float* matrix);
+void gputTranslate(float x, float y, float z);
+void gputRotateX(float rotation);
+void gputRotateY(float rotation);
+void gputRotateZ(float rotation);
+void gputRotate(float x, float y, float z);
+void gputScale(float x, float y, float z);
+
+float gputGetStringWidth(const std::string str, float charWidth);
+float gputGetStringHeight(const std::string str, float charHeight);
+void gputDrawString(const std::string str, float x, float y, float charWidth, float charHeight, u8 red = 0xFF, u8 green = 0xFF, u8 blue = 0xFF, u8 alpha = 0xFF);
+
+void gputDrawRectangle(float x, float y, float width, float height, u8 red = 0xFF, u8 green = 0xFF, u8 blue = 0xFF, u8 alpha = 0xFF);
+
 void gputTakeScreenshot();
 
 #endif

@@ -6,8 +6,11 @@
 #include <string.h>
 
 #include <sstream>
+#include <stack>
 
 #include <3ds.h>
+#include <math.h>
+
 
 #include "ctrcommon_shader_vsh_shbin.h"
 #include "ctrcommon_font_bin.h"
@@ -16,6 +19,12 @@ u32 defaultShader = 0;
 u32 tempVbo = 0;
 u32 dummyTexture = 0;
 u32 fontTexture = 0;
+
+float projection[16] = {0};
+float modelview[16] = {0};
+
+std::stack<float*> projectionStack;
+std::stack<float*> modelviewStack;
 
 void gputInit() {
     gpuCreateShader(&defaultShader);
@@ -34,6 +43,11 @@ void gputInit() {
     gpuCreateTexture(&fontTexture);
     gpuTextureData(fontTexture, gpuFont, 128, 128, PIXEL_RGBA8, TEXTURE_MIN_FILTER(FILTER_NEAREST) | TEXTURE_MAG_FILTER(FILTER_NEAREST));
     gpuFree(gpuFont);
+
+    float identity[16];
+    gputIdentityMatrix(identity);
+    gputProjection(identity);
+    gputModelView(identity);
 }
 
 void gputCleanup() {
@@ -53,39 +67,303 @@ void gputCleanup() {
     }
 }
 
-void gputUpdateViewport(u32 width, u32 height) {
-    const float orthoMatrix[] = {
-            2.0f / (float) width, 0.0f,                  0.0f, -1.0f,
-            0.0f,                 2.0f / (float) height, 0.0f, -1.0f,
-            0.0f,                 0.0f,                  1.0f,  0.0f,
-            0.0f,                 0.0f,                  0.0f,  1.0f
-    };
-
-    static const float rotateMatrix[] = {
-             0.0f, 1.0f, 0.0f, 0.0f,
-            -1.0f, 0.0f, 0.0f, 0.0f,
-             0.0f, 0.0f, 1.0f, 0.0f,
-             0.0f, 0.0f, 0.0f, 1.0f
-    };
-
-    float resultMatrix[4 * 4];
-    for(u32 x1 = 0; x1 < 4; x1++) {
-        for(u32 y2 = 0; y2 < 4; y2++) {
-            resultMatrix[y2 * 4 + x1] = 0;
-            for(u32 y1 = 0; y1 < 4; y1++) {
-                resultMatrix[y2 * 4 + x1] += orthoMatrix[y1 * 4 + x1] * rotateMatrix[y2 * 4 + y1];
-            }
-        }
-    }
-
-    gpuSetUniform(defaultShader, VERTEX_SHADER, "projection", resultMatrix, 4);
-}
-
 void gputUseDefaultShader() {
     gpuUseShader(defaultShader);
 }
 
-int gputGetStringWidth(const std::string str, float scale) {
+void gputMultMatrix4(float* out, const float* m1, const float* m2) {
+    if(out == NULL || m1 == NULL || m2 == NULL) {
+        return;
+    }
+
+    for(u32 x1 = 0; x1 < 4; x1++) {
+        for(u32 y2 = 0; y2 < 4; y2++) {
+            out[y2 * 4 + x1] = 0;
+            for(u32 y1 = 0; y1 < 4; y1++) {
+                out[y2 * 4 + x1] += m1[y1 * 4 + x1] * m2[y2 * 4 + y1];
+            }
+        }
+    }
+}
+
+void gputIdentityMatrix(float *out) {
+    if(out == NULL) {
+        return;
+    }
+
+    memset(out, 0x00, 16 * sizeof(float));
+    out[0] = 1.0f;
+    out[5] = 1.0f;
+    out[10] = 1.0f;
+    out[15] = 1.0f;
+}
+
+void gputOrthoMatrix(float* out, float left, float right, float bottom, float top, float near, float far) {
+    float orthoMatrix[16];
+
+    orthoMatrix[0] = 2.0f / (right - left);
+    orthoMatrix[1] = 0.0f;
+    orthoMatrix[2] = 0.0f;
+    orthoMatrix[3] = -((right + left) / (right - left));
+
+    orthoMatrix[4] = 0.0f;
+    orthoMatrix[5] = 2.0f / (top - bottom);
+    orthoMatrix[6] = 0.0f;
+    orthoMatrix[7] = -((top + bottom) / (top - bottom));
+
+    orthoMatrix[8] = 0.0f;
+    orthoMatrix[9] = 0.0f;
+    orthoMatrix[10] = 2.0f / (far - near);
+    orthoMatrix[11] = -((far + near) / (far - near));
+
+    orthoMatrix[12] = 0.0f;
+    orthoMatrix[13] = 0.0f;
+    orthoMatrix[14] = 0.0f;
+    orthoMatrix[15] = 1.0f;
+
+    float correction[16];
+    gputRotationMatrixZ(correction, (float) M_PI / 2.0f);
+
+    gputMultMatrix4(out, orthoMatrix, correction);
+}
+
+void gputPerspectiveMatrix(float* out, float fovy, float aspect, float near, float far) {
+    float top = near * (float) tan(fovy / 2);
+    float right = top * aspect;
+
+    float projectionMatrix[16];
+
+    projectionMatrix[0] = near / right;
+    projectionMatrix[1] = 0.0f;
+    projectionMatrix[2] = 0.0f;
+    projectionMatrix[3] = 0.0f;
+
+    projectionMatrix[4] = 0.0f;
+    projectionMatrix[5] = near / top;
+    projectionMatrix[6] = 0.0f;
+    projectionMatrix[7] = 0.0f;
+
+    projectionMatrix[8] = 0.0f;
+    projectionMatrix[9] = 0.0f;
+    projectionMatrix[10] = -(far + near) / (far - near);
+    projectionMatrix[11] = -2.0f * (far * near) / (far - near);
+
+    projectionMatrix[12] = 0.0f;
+    projectionMatrix[13] = 0.0f;
+    projectionMatrix[14] = -1.0f;
+    projectionMatrix[15] = 0.0f;
+
+    float correction[16];
+    gputIdentityMatrix(correction);
+    correction[10] = 0.5f;
+    correction[11] = -0.5f;
+
+    gputMultMatrix4(out, correction, projectionMatrix);
+}
+
+void gputTranslationMatrix(float* out, float x, float y, float z) {
+    if(out == NULL) {
+        return;
+    }
+
+    gputIdentityMatrix(out);
+    out[3] = x;
+    out[7] = y;
+    out[11] = z;
+}
+
+void gputRotationMatrixX(float* out, float rotation) {
+    if(out == NULL) {
+        return;
+    }
+
+    memset(out, 0x00, 16 * sizeof(float));
+
+    out[0] = 1.0f;
+    out[5] = (float) cos(rotation);
+    out[6] = (float) sin(rotation);
+    out[9] = (float) -sin(rotation);
+    out[10] = (float) cos(rotation);
+    out[15] = 1.0f;
+}
+
+void gputRotationMatrixY(float* out, float rotation) {
+    if(out == NULL) {
+        return;
+    }
+
+    memset(out, 0x00, 16 * sizeof(float));
+
+    out[0] = (float) cos(rotation);
+    out[2] = (float) sin(rotation);
+    out[5] = 1.0f;
+    out[8] = (float) -sin(rotation);
+    out[10] = (float) cos(rotation);
+    out[15] = 1.0f;
+}
+
+void gputRotationMatrixZ(float* out, float rotation) {
+    if(out == NULL) {
+        return;
+    }
+
+    memset(out, 0x00, 16 * sizeof(float));
+
+    out[0] = (float) cos(rotation);
+    out[1] = (float) sin(rotation);
+    out[4] = (float) -sin(rotation);
+    out[5] = (float) cos(rotation);
+    out[10] = 1.0f;
+    out[15] = 1.0f;
+}
+
+void gputScaleMatrix(float *matrix, float x, float y, float z) {
+    matrix[0] *= x;
+    matrix[4] *= x;
+    matrix[8] *= x;
+    matrix[12] *= x;
+
+    matrix[1] *= y;
+    matrix[5] *= y;
+    matrix[9] *= y;
+    matrix[13] *= y;
+
+    matrix[2] *= z;
+    matrix[6] *= z;
+    matrix[10] *= z;
+    matrix[14] *= z;
+}
+
+void gputPushProjection() {
+    float* old = (float*) malloc(16 * sizeof(float));
+    memcpy(old, projection, 16 * sizeof(float));
+    projectionStack.push(old);
+}
+
+void gputPopProjection() {
+    if(projectionStack.empty()) {
+        return;
+    }
+
+    float* old = projectionStack.top();
+    projectionStack.pop();
+    gputProjection(old);
+    free(old);
+}
+
+float* gputGetProjection() {
+    return projection;
+}
+
+void gputProjection(float* matrix) {
+    if(matrix == NULL) {
+        return;
+    }
+
+    memcpy(projection, matrix, 16 * sizeof(float));
+    gpuSetUniform(defaultShader, VERTEX_SHADER, "projection", projection, 4);
+}
+
+void gputOrtho(float left, float right, float bottom, float top, float near, float far) {
+    float orthoMatrix[16];
+    gputOrthoMatrix(orthoMatrix, left, right, bottom, top, near, far);
+    gputProjection(orthoMatrix);
+}
+
+void gputPerspective(float fovy, float aspect, float near, float far) {
+    float perspectiveMatrix[16];
+    gputPerspectiveMatrix(perspectiveMatrix, fovy, aspect, near, far);
+    gputProjection(perspectiveMatrix);
+}
+
+void gputPushModelView() {
+    float* old = (float*) malloc(16 * sizeof(float));
+    memcpy(old, modelview, 16 * sizeof(float));
+    modelviewStack.push(old);
+}
+
+void gputPopModelView() {
+    if(modelviewStack.empty()) {
+        return;
+    }
+
+    float* old = modelviewStack.top();
+    modelviewStack.pop();
+    gputModelView(old);
+    free(old);
+}
+
+float* gputGetModelView() {
+    return modelview;
+}
+
+void gputModelView(float* matrix) {
+    if(matrix == NULL) {
+        return;
+    }
+
+    memcpy(modelview, matrix, 16 * sizeof(float));
+    gpuSetUniform(defaultShader, VERTEX_SHADER, "modelview", modelview, 4);
+}
+
+void gputTranslate(float x, float y, float z) {
+    float translationMatrix[16];
+    gputTranslationMatrix(translationMatrix, x, y, z);
+
+    float resultMatrix[16];
+    gputMultMatrix4(resultMatrix, modelview, translationMatrix);
+    gputModelView(resultMatrix);
+}
+
+void gputRotateX(float rotation) {
+    float rotationMatrix[16];
+    gputRotationMatrixX(rotationMatrix, rotation);
+
+    float resultMatrix[16];
+    gputMultMatrix4(resultMatrix, modelview, rotationMatrix);
+    gputModelView(resultMatrix);
+}
+
+void gputRotateY(float rotation) {
+    float rotationMatrix[16];
+    gputRotationMatrixY(rotationMatrix, rotation);
+
+    float resultMatrix[16];
+    gputMultMatrix4(resultMatrix, modelview, rotationMatrix);
+    gputModelView(resultMatrix);
+}
+
+void gputRotateZ(float rotation) {
+    float rotationMatrix[16];
+    gputRotationMatrixZ(rotationMatrix, rotation);
+
+    float resultMatrix[16];
+    gputMultMatrix4(resultMatrix, modelview, rotationMatrix);
+    gputModelView(resultMatrix);
+}
+
+void gputRotate(float x, float y, float z) {
+    float tempMatrix[16];
+    float tempMatrix2[16];
+    float tempMatrix3[16];
+
+    gputRotationMatrixX(tempMatrix, x);
+    gputRotationMatrixY(tempMatrix2, y);
+    gputMultMatrix4(tempMatrix3, tempMatrix, tempMatrix2);
+
+    gputRotationMatrixZ(tempMatrix2, z);
+    gputMultMatrix4(tempMatrix, tempMatrix3, tempMatrix2);
+
+    gputMultMatrix4(tempMatrix2, modelview, tempMatrix);
+    gputModelView(tempMatrix2);
+}
+
+void gputScale(float x, float y, float z) {
+    gputScaleMatrix(modelview, x, y, z);
+    gputModelView(modelview);
+}
+
+float gputGetStringWidth(const std::string str, float charWidth) {
     u32 len = str.length();
     if(len == 0) {
         return 0;
@@ -110,10 +388,10 @@ int gputGetStringWidth(const std::string str, float scale) {
         longestLine = currLength;
     }
 
-    return (int) (longestLine * 8 * scale);
+    return (int) (longestLine * charWidth);
 }
 
-int gputGetStringHeight(const std::string str, float scale) {
+float gputGetStringHeight(const std::string str, float charHeight) {
     u32 len = str.length();
     if(len == 0) {
         return 0;
@@ -126,13 +404,12 @@ int gputGetStringHeight(const std::string str, float scale) {
         }
     }
 
-    return (int) (lines * 8 * scale);
+    return (int) (lines * charHeight);
 }
 
-void gputDrawString(const std::string str, int x, int y, float scale, u8 red, u8 green, u8 blue, u8 alpha) {
+void gputDrawString(const std::string str, float x, float y, float charWidth, float charHeight, u8 red, u8 green, u8 blue, u8 alpha) {
     static const float charSize = 8.0f / 128.0f;
 
-    const float size = 8 * scale;
     const float r = (float) red / 255.0f;
     const float g = (float) green / 255.0f;
     const float b = (float) blue / 255.0f;
@@ -143,14 +420,14 @@ void gputDrawString(const std::string str, int x, int y, float scale, u8 red, u8
     float* tempVboData = (float*) gpuGetVboData(tempVbo);
 
     float cx = x;
-    float cy = y + gputGetStringHeight(str, scale) - 8;
+    float cy = y + gputGetStringHeight(str, charHeight) - 8;
     for(u32 i = 0; i < len; i++) {
         char c = str[i];
         if(c == '\n') {
             memset(tempVboData + (i * 6 * 9), 0, 6 * 9 * sizeof(float));
 
             cx = x;
-            cy -= size;
+            cy -= charHeight;
             continue;
         }
 
@@ -161,15 +438,15 @@ void gputDrawString(const std::string str, int x, int y, float scale, u8 red, u8
 
         const float vboData[] = {
                 cx, cy, -0.1f, texX1, texY1, r, g, b, a,
-                cx + size, cy, -0.1f, texX2, texY1, r, g, b, a,
-                cx + size, cy + size, -0.1f, texX2, texY2, r, g, b, a,
-                cx + size, cy + size, -0.1f, texX2, texY2, r, g, b, a,
-                cx, cy + size, -0.1f, texX1, texY2, r, g, b, a,
+                cx + charWidth, cy, -0.1f, texX2, texY1, r, g, b, a,
+                cx + charWidth, cy + charHeight, -0.1f, texX2, texY2, r, g, b, a,
+                cx + charWidth, cy + charHeight, -0.1f, texX2, texY2, r, g, b, a,
+                cx, cy + charHeight, -0.1f, texX1, texY2, r, g, b, a,
                 cx, cy, -0.1f, texX1, texY1, r, g, b, a
         };
 
         memcpy(tempVboData + (i * 6 * 9), vboData, sizeof(vboData));
-        cx += size;
+        cx += charWidth;
     }
 
     gpuBindTexture(TEXUNIT0, fontTexture);
@@ -179,19 +456,19 @@ void gputDrawString(const std::string str, int x, int y, float scale, u8 red, u8
     gpuFlush();
 }
 
-void gputDrawRectangle(int x, int y, u32 width, u32 height, u8 red, u8 green, u8 blue, u8 alpha) {
+void gputDrawRectangle(float x, float y, float width, float height, u8 red, u8 green, u8 blue, u8 alpha) {
     const float r = (float) red / 255.0f;
     const float g = (float) green / 255.0f;
     const float b = (float) blue / 255.0f;
     const float a = (float) alpha / 255.0f;
 
     const float vboData[] = {
-            (float) x, (float) y, -0.1f, 0.0f, 0.0f, r, g, b, a,
-            (float) x + width, (float) y, -0.1f, 1.0f, 0.0f, r, g, b, a,
-            (float) x + width, (float) y + height, -0.1f, 1.0f, 1.0f, r, g, b, a,
-            (float) x + width, (float) y + height, -0.1f, 1.0f, 1.0f, r, g, b, a,
-            (float) x, (float) y + height, -0.1f, 0.0f, 1.0f, r, g, b, a,
-            (float) x, (float) y, -0.1f, 0.0f, 0.0f, r, g, b, a
+            x, y, -0.1f, 0.0f, 0.0f, r, g, b, a,
+            x + width, y, -0.1f, 1.0f, 0.0f, r, g, b, a,
+            x + width, y + height, -0.1f, 1.0f, 1.0f, r, g, b, a,
+            x + width, y + height, -0.1f, 1.0f, 1.0f, r, g, b, a,
+            x, y + height, -0.1f, 0.0f, 1.0f, r, g, b, a,
+            x, y, -0.1f, 0.0f, 0.0f, r, g, b, a
     };
 
     gpuVboData(tempVbo, vboData, 6 * 9, PRIM_TRIANGLES);
