@@ -7,6 +7,8 @@
 
 #include <3ds.h>
 
+#define GPU_COMMAND_BUFFER_SIZE 0x80000
+
 #define TEX_ENV_COUNT 6
 #define TEX_UNIT_COUNT 3
 
@@ -157,6 +159,8 @@ u32 enabledTextures;
 bool allow3d;
 ScreenSide screenSide;
 
+u32* gpuCommandBuffer;
+
 extern void gputInit();
 extern void gputCleanup();
 
@@ -246,22 +250,24 @@ bool gpuInit() {
     allow3d = false;
     screenSide = LEFT_SCREEN;
 
-    gfxSet3D(true);
+    gpuCommandBuffer = (u32*) linearAlloc(GPU_COMMAND_BUFFER_SIZE * sizeof(u32));
 
-    u32 gpuCmdSize = 0x40000;
-    u32* gpuCmd = (u32*) linearAlloc(gpuCmdSize * 4);
+    gfxSet3D(true);
     GPU_Init(NULL);
-    GPU_Reset(NULL, gpuCmd, gpuCmdSize);
-    GPUCMD_SetBufferOffset(0);
+    GPU_Reset(NULL, gpuCommandBuffer, GPU_COMMAND_BUFFER_SIZE);
 
     gputInit();
-
     gpuClear();
     return true;
 }
 
 void gpuCleanup() {
     gputCleanup();
+
+    if(gpuCommandBuffer != NULL) {
+        linearFree(gpuCommandBuffer);
+        gpuCommandBuffer = NULL;
+    }
 }
 
 void* gpuAlloc(u32 size) {
@@ -697,9 +703,14 @@ void gpuVboDataInfo(u32 vbo, u32 numVertices, Primitive primitive) {
         }
 
         vboData->data = linearMemAlign(size, 0x80);
+        if(vboData->data == NULL) {
+            vboData->size = 0;
+            return;
+        }
+
+        vboData->size = size;
     }
 
-    vboData->size = size;
     vboData->numVertices = numVertices;
     vboData->primitive = primitive;
 }
@@ -752,9 +763,13 @@ void gpuVboIndicesInfo(u32 vbo, u32 size) {
         }
 
         vboData->indices = linearMemAlign(size, 0x80);
-    }
+        if(vboData->indices == NULL) {
+            vboData->indicesSize = 0;
+            return;
+        }
 
-    vboData->indicesSize = size;
+        vboData->indicesSize = size;
+    }
 }
 
 void gpuVboIndices(u32 vbo, const void* data, u32 size) {
@@ -764,7 +779,7 @@ void gpuVboIndices(u32 vbo, const void* data, u32 size) {
     }
 
     gpuVboIndicesInfo(vbo, data != NULL ? size : 0);
-    if(data == NULL) {
+    if(data == NULL || size == 0) {
         return;
     }
 
@@ -871,13 +886,15 @@ void gpuTextureInfo(u32 texture, u32 width, u32 height, PixelFormat format, u32 
 
         textureData->data = linearMemAlign(size, 0x80);
         if(textureData->data == NULL) {
+            textureData->size = 0;
             return;
         }
+
+        textureData->size = size;
     }
 
     textureData->width = width;
     textureData->height = height;
-    textureData->size = size;
     textureData->format = format;
     textureData->params = params;
 
