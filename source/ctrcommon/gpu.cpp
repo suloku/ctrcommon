@@ -89,11 +89,13 @@ static u32 nibblesPerPixelFormat[] = {
 };
 
 static PixelFormat fbFormatToGPU[] = {
-    PIXEL_RGBA8, PIXEL_RGB8, PIXEL_RGB565, PIXEL_RGBA5551, PIXEL_RGBA4
+    PIXEL_RGBA8,    // GSP_RGBA8_OES
+    PIXEL_RGB8,     // GSP_BGR8_OES
+    PIXEL_RGB565,   // GSP_RGB565_OES
+    PIXEL_RGBA5551, // GSP_RGB5_A1_OES
+    PIXEL_RGBA4     // GSP_RGBA4_OES
 };
 
-static u32* gpuFrameBuffer = (u32*) 0x1F119400;
-static u32* gpuDepthBuffer = (u32*) 0x1F370800;
 extern Handle gspEvents[GSPEVENT_MAX];
 
 u32 dirtyState;
@@ -160,6 +162,8 @@ bool allow3d;
 ScreenSide screenSide;
 
 u32* gpuCommandBuffer;
+u32* gpuFrameBuffer;
+u32* gpuDepthBuffer;
 
 extern void gputInit();
 extern void gputCleanup();
@@ -251,6 +255,8 @@ bool gpuInit() {
     screenSide = LEFT_SCREEN;
 
     gpuCommandBuffer = (u32*) linearAlloc(GPU_COMMAND_BUFFER_SIZE * sizeof(u32));
+    gpuFrameBuffer = (u32*) vramAlloc(TOP_WIDTH * TOP_HEIGHT * sizeof(u32));
+    gpuDepthBuffer = (u32*) vramAlloc(TOP_WIDTH * TOP_HEIGHT * sizeof(u32));
 
     gfxSet3D(true);
     GPU_Init(NULL);
@@ -267,6 +273,16 @@ void gpuCleanup() {
     if(gpuCommandBuffer != NULL) {
         linearFree(gpuCommandBuffer);
         gpuCommandBuffer = NULL;
+    }
+
+    if(gpuFrameBuffer != NULL) {
+        vramFree(gpuFrameBuffer);
+        gpuFrameBuffer = NULL;
+    }
+
+    if(gpuDepthBuffer != NULL) {
+        vramFree(gpuDepthBuffer);
+        gpuDepthBuffer = NULL;
     }
 }
 
