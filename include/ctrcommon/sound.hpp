@@ -12,7 +12,8 @@ typedef enum {
 
 void* soundAlloc(u32 size);
 void soundFree(void* mem);
-bool soundSetChannel(u32 channel, void* samples, u32 numSamples, SampleFormat format, u32 sampleRate, float leftVolume, float rightVolume, bool loop);
+bool soundPlay(u32 channel, void *samples, u32 numSamples, SampleFormat format, u32 sampleRate, float leftVolume, float rightVolume, bool loop);
+bool soundStop(u32 channel);
 bool soundFlush();
 
 #endif

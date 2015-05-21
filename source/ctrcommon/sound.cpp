@@ -12,7 +12,7 @@ void soundFree(void* mem) {
     linearFree(mem);
 }
 
-bool soundSetChannel(u32 channel, void* samples, u32 numSamples, SampleFormat format, u32 sampleRate, float leftVolume, float rightVolume, bool loop) {
+bool soundPlay(u32 channel, void *samples, u32 numSamples, SampleFormat format, u32 sampleRate, float leftVolume, float rightVolume, bool loop) {
     if(samples == NULL || !serviceRequire("csnd")) {
         return false;
     }
@@ -72,6 +72,20 @@ bool soundSetChannel(u32 channel, void* samples, u32 numSamples, SampleFormat fo
     }
 
     CSND_SetPlayState(chn, 1);
+    return true;
+}
+
+bool soundStop(u32 channel) {
+    if(!serviceRequire("csnd")) {
+        return false;
+    }
+
+    u32 chn = 8 + channel;
+    if(!(csndChannels & BIT(chn))) {
+        return false;
+    }
+
+    CSND_SetPlayState(chn, 0);
     return true;
 }
 
