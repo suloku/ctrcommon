@@ -14,7 +14,8 @@
 
 #include <ctrcommon/gpu.hpp>
 
-static Error* currentError;
+static bool hasError = false;
+static Error currentError = {0};
 
 extern bool gpuInit();
 extern void gpuCleanup();
@@ -108,25 +109,23 @@ void platformExitThread() {
     svcExitThread();
 }
 
+bool platformHasError() {
+    return hasError;
+}
+
 Error platformGetError() {
-    Error error;
-    if(currentError != NULL) {
-        error = *currentError;
-        free(currentError);
-        currentError = NULL;
-    } else {
-        memset(&error, 0, sizeof(Error));
+    Error error = currentError;
+    if(hasError) {
+        hasError = false;
+        currentError = {0};
     }
 
     return error;
 }
 
 void platformSetError(Error error) {
-    if(currentError == NULL) {
-        currentError = (Error*) malloc(sizeof(Error));
-    }
-
-    *currentError = error;
+    hasError = true;
+    currentError = error;
 }
 
 std::string platformGetErrorString(Error error) {
@@ -137,268 +136,268 @@ std::string platformGetErrorString(Error error) {
     result << "Module: ";
     switch(error.module) {
         case MODULE_COMMON:
-            result << "Common";
+            result << "MODULE_COMMON";
             break;
-        case MODULE_KERNEL:
-            result << "Kernel";
+        case MODULE_NN_KERNEL:
+            result << "MODULE_NN_KERNEL";
             break;
-        case MODULE_UTIL:
-            result << "Util";
+        case MODULE_NN_UTIL:
+            result << "MODULE_NN_UTIL";
             break;
-        case MODULE_FILE_SERVER:
-            result << "File server";
+        case MODULE_NN_FILE_SERVER:
+            result << "MODULE_NN_FILE_SERVER";
             break;
-        case MODULE_LOADER_SERVER:
-            result << "Loader server";
+        case MODULE_NN_LOADER_SERVER:
+            result << "MODULE_NN_LOADER_SERVER";
             break;
-        case MODULE_TCB:
-            result << "TCB";
+        case MODULE_NN_TCB:
+            result << "MODULE_NN_TCB";
             break;
-        case MODULE_OS:
-            result << "OS";
+        case MODULE_NN_OS:
+            result << "MODULE_NN_OS";
             break;
-        case MODULE_DBG:
-            result << "DBG";
+        case MODULE_NN_DBG:
+            result << "MODULE_NN_DBG";
             break;
-        case MODULE_DMNT:
-            result << "DMNT";
+        case MODULE_NN_DMNT:
+            result << "MODULE_NN_DMNT";
             break;
-        case MODULE_PDN:
-            result << "PDN";
+        case MODULE_NN_PDN:
+            result << "MODULE_NN_PDN";
             break;
-        case MODULE_GX:
-            result << "GX";
+        case MODULE_NN_GX:
+            result << "MODULE_NN_GX";
             break;
-        case MODULE_I2C:
-            result << "I2C";
+        case MODULE_NN_I2C:
+            result << "MODULE_NN_I2C";
             break;
-        case MODULE_GPIO:
-            result << "GPIO";
+        case MODULE_NN_GPIO:
+            result << "MODULE_NN_GPIO";
             break;
-        case MODULE_DD:
-            result << "DD";
+        case MODULE_NN_DD:
+            result << "MODULE_NN_DD";
             break;
-        case MODULE_CODEC:
-            result << "CODEC";
+        case MODULE_NN_CODEC:
+            result << "MODULE_NN_CODEC";
             break;
-        case MODULE_SPI:
-            result << "SPI";
+        case MODULE_NN_SPI:
+            result << "MODULE_NN_SPI";
             break;
-        case MODULE_PXI:
-            result << "PXI";
+        case MODULE_NN_PXI:
+            result << "MODULE_NN_PXI";
             break;
-        case MODULE_FS:
-            result << "FS";
+        case MODULE_NN_FS:
+            result << "MODULE_NN_FS";
             break;
-        case MODULE_DI:
-            result << "DI";
+        case MODULE_NN_DI:
+            result << "MODULE_NN_DI";
             break;
-        case MODULE_HID:
-            result << "HID";
+        case MODULE_NN_HID:
+            result << "MODULE_NN_HID";
             break;
-        case MODULE_CAM:
-            result << "CAM";
+        case MODULE_NN_CAMERA:
+            result << "MODULE_NN_CAMERA";
             break;
-        case MODULE_PI:
-            result << "PI";
+        case MODULE_NN_PI:
+            result << "MODULE_NN_PI";
             break;
-        case MODULE_PM:
-            result << "PM";
+        case MODULE_NN_PM:
+            result << "MODULE_NN_PM";
             break;
-        case MODULE_PM_LOW:
-            result << "PM_LOW";
+        case MODULE_NN_PMLOW:
+            result << "MODULE_NN_PMLOW";
             break;
-        case MODULE_FSI:
-            result << "FSI";
+        case MODULE_NN_FSI:
+            result << "MODULE_NN_FSI";
             break;
-        case MODULE_SRV:
-            result << "SRV";
+        case MODULE_NN_SRV:
+            result << "MODULE_NN_SRV";
             break;
-        case MODULE_NDM:
-            result << "NDM";
+        case MODULE_NN_NDM:
+            result << "MODULE_NN_NDM";
             break;
-        case MODULE_NWM:
-            result << "NWM";
+        case MODULE_NN_NWM:
+            result << "MODULE_NN_NWM";
             break;
-        case MODULE_SOC:
-            result << "SOC";
+        case MODULE_NN_SOCKET:
+            result << "MODULE_NN_SOCKET";
             break;
-        case MODULE_LDR:
-            result << "LDR";
+        case MODULE_NN_LDR:
+            result << "MODULE_NN_LDR";
             break;
-        case MODULE_ACC:
-            result << "ACC";
+        case MODULE_NN_ACC:
+            result << "MODULE_NN_ACC";
             break;
-        case MODULE_ROMFS:
-            result << "RomFS";
+        case MODULE_NN_ROMFS:
+            result << "MODULE_NN_ROMFS";
             break;
-        case MODULE_AM:
-            result << "AM";
+        case MODULE_NN_AM:
+            result << "MODULE_NN_AM";
             break;
-        case MODULE_HIO:
-            result << "HIO";
+        case MODULE_NN_HIO:
+            result << "MODULE_NN_HIO";
             break;
-        case MODULE_UPDATER:
-            result << "Updater";
+        case MODULE_NN_UPDATER:
+            result << "MODULE_NN_UPDATER";
             break;
-        case MODULE_MIC:
-            result << "MIC";
+        case MODULE_NN_MIC:
+            result << "MODULE_NN_MIC";
             break;
-        case MODULE_FND:
-            result << "FND";
+        case MODULE_NN_FND:
+            result << "MODULE_NN_FND";
             break;
-        case MODULE_MP:
-            result << "MP";
+        case MODULE_NN_MP:
+            result << "MODULE_NN_MP";
             break;
-        case MODULE_MPWL:
-            result << "MPWL";
+        case MODULE_NN_MPWL:
+            result << "MODULE_NN_MPWL";
             break;
-        case MODULE_AC:
-            result << "AC";
+        case MODULE_NN_AC:
+            result << "MODULE_NN_AC";
             break;
-        case MODULE_HTTP:
-            result << "HTTP";
+        case MODULE_NN_HTTP:
+            result << "MODULE_NN_HTTP";
             break;
-        case MODULE_DSP:
-            result << "DSP";
+        case MODULE_NN_DSP:
+            result << "MODULE_NN_DSP";
             break;
-        case MODULE_SND:
-            result << "SND";
+        case MODULE_NN_SND:
+            result << "MODULE_NN_SND";
             break;
-        case MODULE_DLP:
-            result << "DLP";
+        case MODULE_NN_DLP:
+            result << "MODULE_NN_DLP";
             break;
-        case MODULE_HIO_LOW:
-            result << "HIO_LOW";
+        case MODULE_NN_HIOLOW:
+            result << "MODULE_NN_HIOLOW";
             break;
-        case MODULE_CSND:
-            result << "CSND";
+        case MODULE_NN_CSND:
+            result << "MODULE_NN_CSND";
             break;
-        case MODULE_SSL:
-            result << "SSL";
+        case MODULE_NN_SSL:
+            result << "MODULE_NN_SSL";
             break;
-        case MODULE_AM_LOW:
-            result << "AM_LOW";
+        case MODULE_NN_AMLOW:
+            result << "MODULE_NN_AMLOW";
             break;
-        case MODULE_NEX:
-            result << "NEX";
+        case MODULE_NN_NEX:
+            result << "MODULE_NN_NEX";
             break;
-        case MODULE_FRIENDS:
-            result << "Friends";
+        case MODULE_NN_FRIENDS:
+            result << "MODULE_NN_FRIENDS";
             break;
-        case MODULE_RDT:
-            result << "RDT";
+        case MODULE_NN_RDT:
+            result << "MODULE_NN_RDT";
             break;
-        case MODULE_APPLET:
-            result << "Applet";
+        case MODULE_NN_APPLET:
+            result << "MODULE_NN_APPLET";
             break;
-        case MODULE_NIM:
-            result << "NIM";
+        case MODULE_NN_NIM:
+            result << "MODULE_NN_NIM";
             break;
-        case MODULE_PTM:
-            result << "PTM";
+        case MODULE_NN_PTM:
+            result << "MODULE_NN_PTM";
             break;
-        case MODULE_MIDI:
-            result << "MIDI";
+        case MODULE_NN_MIDI:
+            result << "MODULE_NN_MIDI";
             break;
-        case MODULE_MC:
-            result << "MC";
+        case MODULE_NN_MC:
+            result << "MODULE_NN_MC";
             break;
-        case MODULE_SWC:
-            result << "SWC";
+        case MODULE_NN_SWC:
+            result << "MODULE_NN_SWC";
             break;
-        case MODULE_FATFS:
-            result << "FatFS";
+        case MODULE_NN_FATFS:
+            result << "MODULE_NN_FATFS";
             break;
-        case MODULE_NGC:
-            result << "NGC";
+        case MODULE_NN_NGC:
+            result << "MODULE_NN_NGC";
             break;
-        case MODULE_CARD:
-            result << "CARD";
+        case MODULE_NN_CARD:
+            result << "MODULE_NN_CARD";
             break;
-        case MODULE_CARDNOR:
-            result << "CARDNOR";
+        case MODULE_NN_CARDNOR:
+            result << "MODULE_NN_CARDNOR";
             break;
-        case MODULE_SDMC:
-            result << "SDMC";
+        case MODULE_NN_SDMC:
+            result << "MODULE_NN_SDMC";
             break;
-        case MODULE_BOSS:
-            result << "BOSS";
+        case MODULE_NN_BOSS:
+            result << "MODULE_NN_BOSS";
             break;
-        case MODULE_DBM:
-            result << "DBM";
+        case MODULE_NN_DBM:
+            result << "MODULE_NN_DBM";
             break;
-        case MODULE_CONFIG:
-            result << "Config";
+        case MODULE_NN_CONFIG:
+            result << "MODULE_NN_CONFIG";
             break;
-        case MODULE_PS:
-            result << "PS";
+        case MODULE_NN_PS:
+            result << "MODULE_NN_PS";
             break;
-        case MODULE_CEC:
-            result << "CEC";
+        case MODULE_NN_CEC:
+            result << "MODULE_NN_CEC";
             break;
-        case MODULE_IR:
-            result << "IR";
+        case MODULE_NN_IR:
+            result << "MODULE_NN_IR";
             break;
-        case MODULE_UDS:
-            result << "UDS";
+        case MODULE_NN_UDS:
+            result << "MODULE_NN_UDS";
             break;
-        case MODULE_PL:
-            result << "PL";
+        case MODULE_NN_PL:
+            result << "MODULE_NN_PL";
             break;
-        case MODULE_CUP:
-            result << "CUP";
+        case MODULE_NN_CUP:
+            result << "MODULE_NN_CUP";
             break;
-        case MODULE_GYROSCOPE:
-            result << "Gyroscope";
+        case MODULE_NN_GYROSCOPE:
+            result << "MODULE_NN_GYROSCOPE";
             break;
-        case MODULE_MCU:
-            result << "MCU";
+        case MODULE_NN_MCU:
+            result << "MODULE_NN_MCU";
             break;
-        case MODULE_NS:
-            result << "NS";
+        case MODULE_NN_NS:
+            result << "MODULE_NN_NS";
             break;
-        case MODULE_NEWS:
-            result << "News";
+        case MODULE_NN_NEWS:
+            result << "MODULE_NN_NEWS";
             break;
-        case MODULE_RO:
-            result << "RO";
+        case MODULE_NN_RO:
+            result << "MODULE_NN_RO";
             break;
-        case MODULE_GD:
-            result << "GD";
+        case MODULE_NN_GD:
+            result << "MODULE_NN_GD";
             break;
-        case MODULE_CARD_SPI:
-            result << "Card SPI";
+        case MODULE_NN_CARDSPI:
+            result << "MODULE_NN_CARDSPI";
             break;
-        case MODULE_EC:
-            result << "EC";
+        case MODULE_NN_EC:
+            result << "MODULE_NN_EC";
             break;
-        case MODULE_WEB_BROWSER:
-            result << "Web browser";
+        case MODULE_NN_WEBBRS:
+            result << "MODULE_NN_WEBBRS";
             break;
-        case MODULE_TEST:
-            result << "Test";
+        case MODULE_NN_TEST:
+            result << "MODULE_NN_TEST";
             break;
-        case MODULE_ENC:
-            result << "ENC";
+        case MODULE_NN_ENC:
+            result << "MODULE_NN_ENC";
             break;
-        case MODULE_PIA:
-            result << "PIA";
+        case MODULE_NN_PIA:
+            result << "MODULE_NN_PIA";
             break;
-        case MODULE_MVD:
-            result << "MVD";
+        case MODULE_NN_MVD:
+            result << "MODULE_NN_MVD";
             break;
-        case MODULE_QTM:
-            result << "QTM";
+        case MODULE_NN_QTM:
+            result << "MODULE_NN_QTM";
             break;
         case MODULE_APPLICATION:
-            result << "Application";
+            result << "MODULE_APPLICATION";
             break;
-        case MODULE_INVALID:
-            result << "Invalid result";
+        case MODULE_INVALID_RESULT_VALUE:
+            result << "MODULE_INVALID_RESULT_VALUE";
             break;
         default:
-            result << "Unknown module";
+            result << "<unknown>";
             break;
     }
 
@@ -407,34 +406,34 @@ std::string platformGetErrorString(Error error) {
     result << "Level: ";
     switch(error.level) {
         case LEVEL_SUCCESS:
-            result << "Success";
+            result << "LEVEL_SUCCESS";
             break;
         case LEVEL_INFO:
-            result << "Info";
+            result << "LEVEL_INFO";
             break;
         case LEVEL_STATUS:
-            result << "Status";
+            result << "LEVEL_STATUS";
             break;
         case LEVEL_TEMPORARY:
-            result << "Temporary";
+            result << "LEVEL_TEMPORARY";
             break;
         case LEVEL_PERMANENT:
-            result << "Permanent";
+            result << "LEVEL_PERMANENT";
             break;
         case LEVEL_USAGE:
-            result << "Usage";
+            result << "LEVEL_USAGE";
             break;
-        case LEVEL_REINITIALIZE:
-            result << "Reinitialize";
+        case LEVEL_REINIT:
+            result << "LEVEL_REINIT";
             break;
         case LEVEL_RESET:
-            result << "Reset";
+            result << "LEVEL_RESET";
             break;
         case LEVEL_FATAL:
-            result << "Fatal";
+            result << "LEVEL_FATAL";
             break;
         default:
-            result << "Unknown level";
+            result << "<unknown>";
             break;
     }
 
@@ -443,46 +442,46 @@ std::string platformGetErrorString(Error error) {
     result << "Summary: ";
     switch(error.summary) {
         case SUMMARY_SUCCESS:
-            result << "Success";
+            result << "SUMMARY_SUCCESS";
             break;
         case SUMMARY_NOTHING_HAPPENED:
-            result << "Nothing happened";
+            result << "SUMMARY_NOTHING_HAPPENED";
             break;
         case SUMMARY_WOULD_BLOCK:
-            result << "Would block";
+            result << "SUMMARY_WOULD_BLOCK";
             break;
         case SUMMARY_OUT_OF_RESOURCE:
-            result << "Out of resource";
+            result << "SUMMARY_OUT_OF_RESOURCE";
             break;
         case SUMMARY_NOT_FOUND:
-            result << "Not found";
+            result << "SUMMARY_NOT_FOUND";
             break;
         case SUMMARY_INVALID_STATE:
-            result << "Invalid state";
+            result << "SUMMARY_INVALID_STATE";
             break;
         case SUMMARY_NOT_SUPPORTED:
-            result << "Not supported";
+            result << "SUMMARY_NOT_SUPPORTED";
             break;
         case SUMMARY_INVALID_ARGUMENT:
-            result << "Invalid argument";
+            result << "SUMMARY_INVALID_ARGUMENT";
             break;
         case SUMMARY_WRONG_ARGUMENT:
-            result << "Wrong argument";
+            result << "SUMMARY_WRONG_ARGUMENT";
             break;
         case SUMMARY_CANCELED:
-            result << "Canceled";
+            result << "SUMMARY_CANCELED";
             break;
         case SUMMARY_STATUS_CHANGED:
-            result << "Status changed";
+            result << "SUMMARY_STATUS_CHANGED";
             break;
         case SUMMARY_INTERNAL:
-            result << "Internal";
+            result << "SUMMARY_INTERNAL";
             break;
-        case SUMMARY_INVALID:
-            result << "Invalid result";
+        case SUMMARY_INVALID_RESULT_VALUE:
+            result << "SUMMARY_INVALID_RESULT_VALUE";
             break;
         default:
-            result << "Unknown summary";
+            result << "<unknown>";
             break;
     }
 
@@ -491,159 +490,160 @@ std::string platformGetErrorString(Error error) {
     result << "Description: ";
     switch(error.description) {
         case DESCRIPTION_SUCCESS:
-            result << "Success";
+            result << "DESCRIPTION_SUCCESS";
             break;
         case DESCRIPTION_INVALID_MEMORY_PERMISSIONS:
-            result << "Invalid memory permissions";
+            result << "DESCRIPTION_INVALID_MEMORY_PERMISSIONS";
             break;
         case DESCRIPTION_INVALID_TICKET_VERSION:
-            result << "Invalid ticket version";
+            result << "DESCRIPTION_INVALID_TICKET_VERSION";
             break;
         case DESCRIPTION_STRING_TOO_BIG:
-            result << "String too big";
+            result << "DESCRIPTION_STRING_TOO_BIG";
             break;
         case DESCRIPTION_ACCESS_DENIED:
-            result << "Access denied";
+            result << "DESCRIPTION_ACCESS_DENIED";
             break;
         case DESCRIPTION_STRING_TOO_SMALL:
-            result << "String too small";
+            result << "DESCRIPTION_STRING_TOO_SMALL";
             break;
         case DESCRIPTION_CAMERA_BUSY:
-            result << "Camera busy";
+            result << "DESCRIPTION_CAMERA_BUSY";
             break;
         case DESCRIPTION_NOT_ENOUGH_MEMORY:
-            result << "Not enough memory";
+            result << "DESCRIPTION_NOT_ENOUGH_MEMORY";
             break;
         case DESCRIPTION_SESSION_CLOSED_BY_REMOTE:
-            result << "Session closed by remote";
+            result << "DESCRIPTION_SESSION_CLOSED_BY_REMOTE";
             break;
         case DESCRIPTION_INVALID_NCCH:
-            result << "Invalid NCCH";
+            result << "DESCRIPTION_INVALID_NCCH";
             break;
         case DESCRIPTION_INVALID_TITLE_VERSION:
-            result << "Invalid title version";
+            result << "DESCRIPTION_INVALID_TITLE_VERSION";
             break;
         case DESCRIPTION_DATABASE_DOES_NOT_EXIST:
-            result << "Database does not exist";
+            result << "DESCRIPTION_DATABASE_DOES_NOT_EXIST";
             break;
         case DESCRIPTION_TRIED_TO_UNINSTALL_SYSTEM_APP:
-            result << "Tried to uninstall system app";
+            result << "DESCRIPTION_TRIED_TO_UNINSTALL_SYSTEM_APP";
             break;
         case DESCRIPTION_ARCHIVE_NOT_MOUNTED:
-            result << "Archive not mounted";
+            result << "DESCRIPTION_ARCHIVE_NOT_MOUNTED";
             break;
         case DESCRIPTION_REQUEST_TIMED_OUT:
-            result << "Request timed out";
+            result << "DESCRIPTION_REQUEST_TIMED_OUT";
             break;
         case DESCRIPTION_INVALID_SIGNATURE:
-            result << "Invalid signature";
+            result << "DESCRIPTION_INVALID_SIGNATURE";
             break;
         case DESCRIPTION_TITLE_NOT_FOUND:
-            result << "Title not found";
+            result << "DESCRIPTION_TITLE_NOT_FOUND";
             break;
         case DESCRIPTION_GAMECARD_NOT_INSERTED:
-            result << "Gamecard not inserted";
+            result << "DESCRIPTION_GAMECARD_NOT_INSERTED";
             break;
         case DESCRIPTION_INVALID_FILE_OPEN_FLAGS:
-            result << "Invalid file open flags";
+            result << "DESCRIPTION_INVALID_FILE_OPEN_FLAGS";
             break;
         case DESCRIPTION_INVALID_CONFIGURATION:
-            result << "Invalid configuration";
+            result << "DESCRIPTION_INVALID_CONFIGURATION";
             break;
         case DESCRIPTION_NCCH_HASH_CHECK_FAILED:
-            result << "NCCH hash check failed";
+            result << "DESCRIPTION_NCCH_HASH_CHECK_FAILED";
             break;
         case DESCRIPTION_AES_VERIFICATION_FAILED:
-            result << "AES verification failed";
+            result << "DESCRIPTION_AES_VERIFICATION_FAILED";
             break;
         case DESCRIPTION_INVALID_DATABASE:
-            result << "Invalid database";
+            result << "DESCRIPTION_INVALID_DATABASE";
+            break;
         case DESCRIPTION_SAVE_HASH_CHECK_FAILED:
-            result << "Save hash check failed";
+            result << "DESCRIPTION_SAVE_HASH_CHECK_FAILED";
             break;
         case DESCRIPTION_COMMAND_PERMISSION_DENIED:
-            result << "Command permission denied";
+            result << "DESCRIPTION_COMMAND_PERMISSION_DENIED";
             break;
         case DESCRIPTION_INVALID_PATH:
-            result << "Invalid path";
+            result << "DESCRIPTION_INVALID_PATH";
             break;
         case DESCRIPTION_INCORRECT_READ_SIZE:
-            result << "Incorrect read size";
+            result << "DESCRIPTION_INCORRECT_READ_SIZE";
             break;
-        case DESCRIPTION_INVALID_SECTION:
-            result << "Invalid section";
+        case DESCRIPTION_INVALID_SELECTION:
+            result << "DESCRIPTION_INVALID_SELECTION";
             break;
         case DESCRIPTION_TOO_LARGE:
-            result << "Too large";
+            result << "DESCRIPTION_TOO_LARGE";
             break;
         case DESCRIPTION_NOT_AUTHORIZED:
-            result << "Not authorized";
+            result << "DESCRIPTION_NOT_AUTHORIZED";
             break;
         case DESCRIPTION_ALREADY_DONE:
-            result << "Already done";
+            result << "DESCRIPTION_ALREADY_DONE";
             break;
         case DESCRIPTION_INVALID_SIZE:
-            result << "Invalid size";
+            result << "DESCRIPTION_INVALID_SIZE";
             break;
         case DESCRIPTION_INVALID_ENUM_VALUE:
-            result << "Invalid enum value";
+            result << "DESCRIPTION_INVALID_ENUM_VALUE";
             break;
         case DESCRIPTION_INVALID_COMBINATION:
-            result << "Invalid combination";
+            result << "DESCRIPTION_INVALID_COMBINATION";
             break;
         case DESCRIPTION_NO_DATA:
-            result << "No data";
+            result << "DESCRIPTION_NO_DATA";
             break;
         case DESCRIPTION_BUSY:
-            result << "Busy";
+            result << "DESCRIPTION_BUSY";
             break;
         case DESCRIPTION_MISALIGNED_ADDRESS:
-            result << "Misaligned address";
+            result << "DESCRIPTION_MISALIGNED_ADDRESS";
             break;
         case DESCRIPTION_MISALIGNED_SIZE:
-            result << "Misaligned size";
+            result << "DESCRIPTION_MISALIGNED_SIZE";
             break;
         case DESCRIPTION_OUT_OF_MEMORY:
-            result << "Out of memory";
+            result << "DESCRIPTION_OUT_OF_MEMORY";
             break;
         case DESCRIPTION_NOT_IMPLEMENTED:
-            result << "Not implemented";
+            result << "DESCRIPTION_NOT_IMPLEMENTED";
             break;
         case DESCRIPTION_INVALID_ADDRESS:
-            result << "Invalid address";
+            result << "DESCRIPTION_INVALID_ADDRESS";
             break;
         case DESCRIPTION_INVALID_POINTER:
-            result << "Invalid pointer";
+            result << "DESCRIPTION_INVALID_POINTER";
             break;
         case DESCRIPTION_INVALID_HANDLE:
-            result << "Invalid handle";
+            result << "DESCRIPTION_INVALID_HANDLE";
             break;
         case DESCRIPTION_NOT_INITIALIZED:
-            result << "Not initialized";
+            result << "DESCRIPTION_NOT_INITIALIZED";
             break;
         case DESCRIPTION_ALREADY_INITIALIZED:
-            result << "Already initialized";
+            result << "DESCRIPTION_ALREADY_INITIALIZED";
             break;
         case DESCRIPTION_NOT_FOUND:
-            result << "Not found";
+            result << "DESCRIPTION_NOT_FOUND";
             break;
         case DESCRIPTION_CANCEL_REQUESTED:
-            result << "Cancel requested";
+            result << "DESCRIPTION_CANCEL_REQUESTED";
             break;
         case DESCRIPTION_ALREADY_EXISTS:
-            result << "Already exists";
+            result << "DESCRIPTION_ALREADY_EXISTS";
             break;
         case DESCRIPTION_OUT_OF_RANGE:
-            result << "Out of range";
+            result << "DESCRIPTION_OUT_OF_RANGE";
             break;
         case DESCRIPTION_TIMEOUT:
-            result << "Timeout";
+            result << "DESCRIPTION_TIMEOUT";
             break;
-        case DESCRIPTION_INVALID:
-            result << "Invalid result";
+        case DESCRIPTION_INVALID_RESULT_VALUE:
+            result << "DESCRIPTION_INVALID_RESULT_VALUE";
             break;
         default:
-            result << "Unknown description";
+            result << "<unknown>";
             break;
     }
 

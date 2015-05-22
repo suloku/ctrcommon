@@ -133,13 +133,8 @@ bool serviceRequire(const std::string service) {
 Error serviceParseError(u32 error) {
     Error err;
 
-    u32 module = GET_BITS(error, 10, 17);
-    if(module == 79) {
-        module = MODULE_RO;
-    }
-
     err.raw = error;
-    err.module = (ErrorModule) module;
+    err.module = (ErrorModule) GET_BITS(error, 10, 17);
     err.level = (ErrorLevel) GET_BITS(error, 27, 31);
     err.summary = (ErrorSummary) GET_BITS(error, 21, 26);
     err.description = (ErrorDescription) GET_BITS(error, 0, 9);
