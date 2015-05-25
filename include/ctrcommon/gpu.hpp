@@ -48,9 +48,9 @@ typedef enum {
 } TestFunc;
 
 typedef enum {
-    OP_KEEP = 0x0,
-    OP_AND_NOT = 0x1,
-    OP_XOR = 0x5
+    STENCIL_OP_KEEP = 0x0,
+    STENCIL_OP_AND_NOT = 0x1,
+    STENCIL_OP_XOR = 0x5
 } StencilOp;
 
 typedef enum {
@@ -107,6 +107,33 @@ typedef enum{
     SOURCE_CONSTANT = 0xE,
     SOURCE_PREVIOUS = 0xF
 } TexEnvSource;
+
+typedef enum {
+    TEXENV_OP_RGB_SRC_COLOR = 0x00,
+    TEXENV_OP_RGB_ONE_MINUS_SRC_COLOR = 0x01,
+    TEXENV_OP_RGB_SRC_ALPHA = 0x02,
+    TEXENV_OP_RGB_ONE_MINUS_SRC_ALPHA = 0x03,
+    TEXENV_OP_RGB_SRC0_RGB = 0x04,
+    TEXENV_OP_RGB_0x05 = 0x05,
+    TEXENV_OP_RGB_0x06 = 0x06,
+    TEXENV_OP_RGB_0x07 = 0x07,
+    TEXENV_OP_RGB_SRC1_RGB = 0x08,
+    TEXENV_OP_RGB_0x09 = 0x09,
+    TEXENV_OP_RGB_0x0A = 0x0A,
+    TEXENV_OP_RGB_0x0B = 0x0B,
+    TEXENV_OP_RGB_SRC2_RGB = 0x0C,
+    TEXENV_OP_RGB_0x0D = 0x0D,
+    TEXENV_OP_RGB_0x0E = 0x0E,
+    TEXENV_OP_RGB_0x0F = 0x0F,
+} TexEnvOpRGB;
+
+typedef enum {
+    TEXENV_OP_A_SRC_ALPHA = 0x00,
+    TEXENV_OP_A_ONE_MINUS_SRC_ALPHA = 0x01,
+    TEXENV_OP_A_SRC0_RGB = 0x02,
+    TEXENV_OP_A_SRC1_RGB = 0x04,
+    TEXENV_OP_A_SRC2_RGB = 0x06,
+} TexEnvOpA;
 
 typedef enum {
     COMBINE_REPLACE = 0x0,

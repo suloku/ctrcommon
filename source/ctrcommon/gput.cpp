@@ -11,7 +11,6 @@
 #include <3ds.h>
 #include <math.h>
 
-
 #include "ctrcommon_shader_vsh_shbin.h"
 #include "ctrcommon_font_bin.h"
 
