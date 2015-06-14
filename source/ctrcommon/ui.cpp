@@ -59,7 +59,7 @@ void uiCleanup() {
     }
 }
 
-bool uiSelect(SelectableElement* selected, std::vector<SelectableElement> elements, std::function<bool(std::vector<SelectableElement> &currElements, SelectableElement currElement, bool &elementsDirty, bool &resetCursorIfDirty)> onLoop, std::function<bool(SelectableElement select)> onSelect, bool useTopScreen, bool alphabetize) {
+bool uiSelect(SelectableElement* selected, std::vector<SelectableElement> elements, std::function<bool(std::vector<SelectableElement> &currElements, SelectableElement currElement, bool &elementsDirty, bool &resetCursorIfDirty)> onLoop, std::function<bool(SelectableElement select)> onSelect, bool useTopScreen, bool alphabetize, bool dpadPageScroll) {
     int cursor = 0;
     int scroll = 0;
 
@@ -74,6 +74,9 @@ bool uiSelect(SelectableElement* selected, std::vector<SelectableElement> elemen
         std::sort(elements.begin(), elements.end(), uiAlphabetize());
     }
 
+    Button leftScrollButton = dpadPageScroll ? BUTTON_LEFT : BUTTON_L;
+    Button rightScrollButton = dpadPageScroll ? BUTTON_RIGHT : BUTTON_R;
+
     bool canPageUp = false;
     bool canPageDown = false;
     while(platformIsRunning()) {
@@ -87,18 +90,18 @@ bool uiSelect(SelectableElement* selected, std::vector<SelectableElement> elemen
         }
 
         if(canPageUp) {
-            canPageUp = !inputIsReleased(BUTTON_L);
-        } else if(inputIsPressed(BUTTON_L)) {
+            canPageUp = !inputIsReleased(leftScrollButton);
+        } else if(inputIsPressed(leftScrollButton)) {
             canPageUp = true;
         }
 
         if(canPageDown) {
-            canPageDown = !inputIsReleased(BUTTON_R);
-        } else if(inputIsPressed(BUTTON_R)) {
+            canPageDown = !inputIsReleased(rightScrollButton);
+        } else if(inputIsPressed(rightScrollButton)) {
             canPageDown = true;
         }
 
-        if(inputIsHeld(BUTTON_DOWN) || inputIsHeld(BUTTON_UP) || (inputIsHeld(BUTTON_L) && canPageUp) || (inputIsHeld(BUTTON_R) && canPageDown)) {
+        if(inputIsHeld(BUTTON_DOWN) || inputIsHeld(BUTTON_UP) || (inputIsHeld(leftScrollButton) && canPageUp) || (inputIsHeld(rightScrollButton) && canPageDown)) {
             if(lastScrollTime == 0 || platformGetTime() - lastScrollTime >= 180) {
                 if(inputIsHeld(BUTTON_DOWN) && cursor < (int) elements.size() - 1) {
                     cursor++;
@@ -107,7 +110,7 @@ bool uiSelect(SelectableElement* selected, std::vector<SelectableElement> elemen
                     }
                 }
 
-                if(canPageDown && inputIsHeld(BUTTON_R) && cursor < (int) elements.size() - 1) {
+                if(canPageDown && inputIsHeld(rightScrollButton) && cursor < (int) elements.size() - 1) {
                     cursor += 20;
                     if(cursor >= (int) elements.size()) {
                         cursor = elements.size() - 1;
@@ -132,7 +135,7 @@ bool uiSelect(SelectableElement* selected, std::vector<SelectableElement> elemen
                     }
                 }
 
-                if(canPageUp && inputIsHeld(BUTTON_L) && cursor > 0) {
+                if(canPageUp && inputIsHeld(leftScrollButton) && cursor > 0) {
                     cursor -= 20;
                     if(cursor < 0) {
                         cursor = 0;
@@ -304,7 +307,7 @@ void uiGetDirContents(std::vector<SelectableElement> &elements, const std::strin
     }
 }
 
-bool uiSelectFile(std::string* selectedFile, const std::string rootDirectory, std::vector<std::string> extensions, std::function<bool(const std::string currDirectory, bool inRoot, bool &updateList)> onLoop, std::function<bool(const std::string path, bool &updateList)> onSelect, bool useTopScreen) {
+bool uiSelectFile(std::string* selectedFile, const std::string rootDirectory, std::vector<std::string> extensions, std::function<bool(const std::string currDirectory, bool inRoot, bool &updateList)> onLoop, std::function<bool(const std::string path, bool &updateList)> onSelect, bool useTopScreen, bool dpadPageScroll) {
     std::stack<std::string> directoryStack;
     std::string currDirectory = rootDirectory;
 
@@ -360,7 +363,7 @@ bool uiSelectFile(std::string* selectedFile, const std::string rootDirectory, st
         }
 
         return ret;
-    }, useTopScreen, true);
+    }, useTopScreen, true, dpadPageScroll);
 
     if(result) {
         *selectedFile = selected.id;
@@ -415,7 +418,7 @@ bool uiFindApp(App* result, std::string id, std::vector<App> apps) {
     return false;
 }
 
-bool uiSelectApp(App* selectedApp, MediaType mediaType, std::function<bool(bool &updateList)> onLoop, std::function<bool(App app, bool &updateList)> onSelect, bool useTopScreen) {
+bool uiSelectApp(App* selectedApp, MediaType mediaType, std::function<bool(bool &updateList)> onLoop, std::function<bool(App app, bool &updateList)> onSelect, bool useTopScreen, bool dpadPageScroll) {
     std::vector<SelectableElement> elements;
 
     std::vector<App> apps = appList(mediaType);
@@ -452,7 +455,7 @@ bool uiSelectApp(App* selectedApp, MediaType mediaType, std::function<bool(bool 
         }
 
         return false;
-    }, useTopScreen, true);
+    }, useTopScreen, true, dpadPageScroll);
 
     if(result) {
         App app;
