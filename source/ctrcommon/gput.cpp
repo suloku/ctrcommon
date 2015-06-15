@@ -419,7 +419,7 @@ void gputDrawString(const std::string str, float x, float y, float charWidth, fl
     float* tempVboData = (float*) gpuGetVboData(stringVbo);
 
     float cx = x;
-    float cy = y + gputGetStringHeight(str, charHeight) - 8;
+    float cy = y + gputGetStringHeight(str, charHeight) - charHeight;
     for(u32 i = 0; i < len; i++) {
         char c = str[i];
         if(c == '\n') {
