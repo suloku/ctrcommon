@@ -407,6 +407,11 @@ float gputGetStringHeight(const std::string str, float charHeight) {
 }
 
 void gputDrawString(const std::string str, float x, float y, float charWidth, float charHeight, u8 red, u8 green, u8 blue, u8 alpha) {
+    const u32 len = str.length();
+    if(len == 0) {
+        return;
+    }
+
     static const float charSize = 8.0f / 128.0f;
 
     const float r = (float) red / 255.0f;
@@ -414,7 +419,6 @@ void gputDrawString(const std::string str, float x, float y, float charWidth, fl
     const float b = (float) blue / 255.0f;
     const float a = (float) alpha / 255.0f;
 
-    u32 len = str.length();
     gpuVboDataInfo(stringVbo, len * 6, PRIM_TRIANGLES);
     float* tempVboData = (float*) gpuGetVboData(stringVbo);
 
