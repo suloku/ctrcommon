@@ -174,8 +174,8 @@ AccessControlInfo:
    - boss:U
    - cam:u
    - cecd:u
-   - cfg:u
    - cfg:nor
+   - cfg:u
    - dlp:FKCL
    - dlp:SRVR
    - dsp::DSP
