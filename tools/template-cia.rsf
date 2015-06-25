@@ -174,7 +174,6 @@ AccessControlInfo:
    - boss:U
    - cam:u
    - cecd:u
-   - cfg:nor
    - cfg:u
    - dlp:FKCL
    - dlp:SRVR
@@ -194,8 +193,9 @@ AccessControlInfo:
    - soc:U
    - ssl:C
    - y2r:u
-   - csnd:SND
    - am:u
+   - cfg:nor
+   - csnd:SND
 
 SystemControlInfo:
   SaveDataSize: 0KB # It doesn't use any save data.

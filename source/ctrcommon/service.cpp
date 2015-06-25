@@ -104,9 +104,6 @@ bool serviceRequire(const std::string service) {
     } else if(service.compare("ir") == 0) {
         result = irInit();
         cleanup = &irCleanup;
-    } else if(service.compare("nor") == 0) {
-        result = CFGNOR_Initialize(1);
-        cleanup = &CFGNOR_Shutdown;
     } else if(service.compare("kernel") == 0) {
         result = khaxInit();
         cleanup = &khaxExit;
@@ -118,6 +115,9 @@ bool serviceRequire(const std::string service) {
             } else if(service.compare("csnd") == 0) {
                 result = csndInit();
                 cleanup = &csndExit;
+            } else if(service.compare("nor") == 0) {
+                result = CFGNOR_Initialize(1);
+                cleanup = &CFGNOR_Shutdown;
             }
         } else {
             return false;
