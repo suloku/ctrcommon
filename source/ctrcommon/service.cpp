@@ -104,6 +104,12 @@ bool serviceRequire(const std::string service) {
     } else if(service.compare("ir") == 0) {
         result = irInit();
         cleanup = &irCleanup;
+    } else if(service.compare("ac") == 0) {
+        result = acInit();
+        cleanup = &acExit;
+    } else if(service.compare("ptm") == 0) {
+        result = ptmInit();
+        cleanup = &ptmExit;
     } else if(service.compare("kernel") == 0) {
         result = khaxInit();
         cleanup = &khaxExit;

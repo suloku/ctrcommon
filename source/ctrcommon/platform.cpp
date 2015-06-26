@@ -76,6 +76,10 @@ u32 platformGetDeviceId() {
 }
 
 bool platformIsWifiConnected() {
+    if(!serviceRequire("ac")) {
+        return false;
+    }
+    
     u32 status;
     Result result = ACU_GetWifiStatus(NULL, &status);
     if(result != 0) {
@@ -87,6 +91,10 @@ bool platformIsWifiConnected() {
 }
 
 bool platformWaitForInternet() {
+    if(!serviceRequire("ac")) {
+        return false;
+    }
+
     Result result = ACU_WaitInternetConnection();
     if(result != 0) {
         platformSetError(serviceParseError((u32) result));
@@ -100,6 +108,10 @@ u8 platformGetWifiLevel() {
 }
 
 bool platformIsBatteryCharging() {
+    if(!serviceRequire("ptm")) {
+        return false;
+    }
+
     u8 charging;
     Result result = PTMU_GetBatteryChargeState(NULL, &charging);
     if(result != 0) {
@@ -111,6 +123,10 @@ bool platformIsBatteryCharging() {
 }
 
 u8 platformGetBatteryLevel() {
+    if(!serviceRequire("ptm")) {
+        return 0;
+    }
+
     u8 batteryLevel;
     Result result = PTMU_GetBatteryLevel(NULL, &batteryLevel);
     if(result != 0) {
