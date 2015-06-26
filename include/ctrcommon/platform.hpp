@@ -189,13 +189,26 @@ typedef struct {
 
 bool platformInit();
 void platformCleanup();
+
 bool platformIsRunning();
 bool platformIsNinjhax();
+
 bool platformExecuteKernel(s32 (*func)());
+
 u32 platformGetDeviceId();
+
+bool platformIsWifiConnected();
+bool platformWaitForInternet();
+u8 platformGetWifiLevel();
+
+bool platformIsBatteryCharging();
+u8 platformGetBatteryLevel();
+
 u64 platformGetTime();
 void platformDelay(int ms);
+
 void platformPrintf(const char* format, ...);
+
 bool platformHasError();
 Error platformGetError();
 void platformSetError(Error error);

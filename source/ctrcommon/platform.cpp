@@ -66,11 +66,59 @@ u32 platformGetDeviceId() {
     }
 
     u32 deviceId;
-    if(AM_GetDeviceId(&deviceId) != 0) {
+    Result result = AM_GetDeviceId(&deviceId);
+    if(result != 0) {
+        platformSetError(serviceParseError((u32) result));
         return 0;
     }
     
     return deviceId;
+}
+
+bool platformIsWifiConnected() {
+    u32 status;
+    Result result = ACU_GetWifiStatus(NULL, &status);
+    if(result != 0) {
+        platformSetError(serviceParseError((u32) result));
+        return false;
+    }
+
+    return status != 0;
+}
+
+bool platformWaitForInternet() {
+    Result result = ACU_WaitInternetConnection();
+    if(result != 0) {
+        platformSetError(serviceParseError((u32) result));
+    }
+
+    return result == 0;
+}
+
+u8 platformGetWifiLevel() {
+    return platformIsWifiConnected() ? osGetWifiStrength() : (u8) 0;
+}
+
+bool platformIsBatteryCharging() {
+    u8 charging;
+    Result result = PTMU_GetBatteryChargeState(NULL, &charging);
+    if(result != 0) {
+        platformSetError(serviceParseError((u32) result));
+        return false;
+    }
+
+    return charging != 0;
+}
+
+u8 platformGetBatteryLevel() {
+    u8 batteryLevel;
+    Result result = PTMU_GetBatteryLevel(NULL, &batteryLevel);
+    if(result != 0) {
+        platformSetError(serviceParseError((u32) result));
+        return 0;
+    }
+
+    return batteryLevel;
 }
 
 u64 platformGetTime() {
