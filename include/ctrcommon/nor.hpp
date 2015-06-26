@@ -3,6 +3,7 @@
 
 #include "ctrcommon/types.hpp"
 
+bool norRead(u32 offset, void* data, u32 size);
 bool norWrite(u32 offset, void* data, u32 size);
 
 #endif
