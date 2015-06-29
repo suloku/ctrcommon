@@ -79,7 +79,7 @@ bool platformIsWifiConnected() {
     if(!serviceRequire("ac")) {
         return false;
     }
-    
+
     u32 status;
     Result result = ACU_GetWifiStatus(NULL, &status);
     if(result != 0) {

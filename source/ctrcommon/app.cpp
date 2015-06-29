@@ -12,6 +12,7 @@
 #include <sstream>
 
 #include <3ds.h>
+#include <ctrcommon/app.hpp>
 
 u8 appMediatypeToByte(MediaType mediaType) {
     return mediaType == NAND ? mediatype_NAND : mediatype_SDMC;
@@ -152,6 +153,34 @@ App appGetCiaInfo(const std::string file) {
     app.version = titleInfo.titleVersion;
     app.size = titleInfo.size;
     return app;
+}
+
+bool appIsInstalled(App app) {
+    if(!serviceRequire("am")) {
+        return false;
+    }
+
+    u32 titleCount;
+    Result titleCountResult = AM_GetTitleCount(appMediatypeToByte(app.mediaType), &titleCount);
+    if(titleCountResult != 0) {
+        platformSetError(serviceParseError((u32) titleCountResult));
+        return false;
+    }
+
+    u64 titleIds[titleCount];
+    Result titleIdsResult = AM_GetTitleIdList(appMediatypeToByte(app.mediaType), titleCount, titleIds);
+    if(titleIdsResult != 0) {
+        platformSetError(serviceParseError((u32) titleIdsResult));
+        return false;
+    }
+
+    for(u32 i = 0; i < titleCount; i++) {
+        if(titleIds[i] == app.titleId) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 std::vector<App> appList(MediaType mediaType) {
