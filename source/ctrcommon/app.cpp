@@ -114,7 +114,7 @@ const std::string appGetCategoryName(AppCategory category) {
     }
 }
 
-App appGetCiaInfo(const std::string file) {
+App appGetCiaInfo(const std::string file, MediaType mediaType) {
     if(!serviceRequire("am")) {
         return {};
     }
@@ -134,7 +134,7 @@ App appGetCiaInfo(const std::string file) {
     }
 
     TitleList titleInfo;
-    Result infoResult = AM_GetCiaFileInfo(mediatype_SDMC, &titleInfo, handle);
+    Result infoResult = AM_GetCiaFileInfo(appMediatypeToByte(mediaType), &titleInfo, handle);
     if(infoResult != 0) {
         platformSetError(serviceParseError((u32) infoResult));
         return {};
@@ -147,7 +147,7 @@ App appGetCiaInfo(const std::string file) {
     app.titleId = titleInfo.titleID;
     app.uniqueId = ((u32*) &titleInfo.titleID)[0];
     strcpy(app.productCode, "<N/A>");
-    app.mediaType = SD;
+    app.mediaType = mediaType;
     app.platform = appPlatformFromId(((u16*) &titleInfo.titleID)[3]);
     app.category = appCategoryFromId(((u16*) &titleInfo.titleID)[2]);
     app.version = titleInfo.titleVersion;

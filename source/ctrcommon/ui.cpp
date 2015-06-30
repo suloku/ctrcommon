@@ -279,7 +279,7 @@ void uiGetDirContents(std::vector<SelectableElement> &elements, const std::strin
 
             std::string extension = fsGetExtension(path);
             if(extension.compare("cia") == 0) {
-                App app = appGetCiaInfo(path);
+                App app = appGetCiaInfo(path, SD);
 
                 std::stringstream titleId;
                 titleId << "0x" << std::setfill('0') << std::setw(16) << std::hex << app.titleId;
