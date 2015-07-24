@@ -52,6 +52,7 @@ typedef struct {
     u32 size;
     PixelFormat format;
     u32 params;
+    u32 borderColor;
 } TextureData;
 
 typedef struct {
@@ -295,48 +296,45 @@ void gpuFree(void* mem) {
 }
 
 void gpuUpdateState() {
-    u32 dirtyUpdate = dirtyState;
-    dirtyState = 0;
-
-    if(dirtyUpdate & STATE_VIEWPORT) {
+    if(dirtyState & STATE_VIEWPORT) {
         GPU_SetViewport((u32*) osConvertVirtToPhys((u32) gpuDepthBuffer), (u32*) osConvertVirtToPhys((u32) gpuFrameBuffer), viewportX, viewportY, viewportHeight, viewportWidth);
     }
 
-    if(dirtyUpdate & STATE_SCISSOR_TEST) {
+    if(dirtyState & STATE_SCISSOR_TEST) {
         GPU_SetScissorTest((GPU_SCISSORMODE) scissorMode, scissorX, scissorY, scissorHeight, scissorWidth);
     }
 
-    if(dirtyUpdate & STATE_DEPTH_MAP) {
+    if(dirtyState & STATE_DEPTH_MAP) {
         GPU_DepthMap(depthNear, depthFar);
     }
 
-    if(dirtyUpdate & STATE_CULL) {
+    if(dirtyState & STATE_CULL) {
         GPU_SetFaceCulling((GPU_CULLMODE) cullMode);
     }
 
-    if(dirtyUpdate & STATE_STENCIL_TEST) {
+    if(dirtyState & STATE_STENCIL_TEST) {
         GPU_SetStencilTest(stencilEnable, (GPU_TESTFUNC) stencilFunc, stencilRef, stencilMask, stencilReplace);
         GPU_SetStencilOp((GPU_STENCILOP) stencilFail, (GPU_STENCILOP) stencilZFail, (GPU_STENCILOP) stencilZPass);
     }
 
-    if(dirtyUpdate & STATE_BLEND) {
+    if(dirtyState & STATE_BLEND) {
         GPU_SetBlendingColor(blendRed, blendGreen, blendBlue, blendAlpha);
         GPU_SetAlphaBlending((GPU_BLENDEQUATION) blendColorEquation, (GPU_BLENDEQUATION) blendAlphaEquation, (GPU_BLENDFACTOR) blendColorSrc, (GPU_BLENDFACTOR) blendColorDst, (GPU_BLENDFACTOR) blendAlphaSrc, (GPU_BLENDFACTOR) blendAlphaDst);
     }
 
-    if(dirtyUpdate & STATE_ALPHA_TEST) {
+    if(dirtyState & STATE_ALPHA_TEST) {
         GPU_SetAlphaTest(alphaEnable, (GPU_TESTFUNC) alphaFunc, alphaRef);
     }
 
-    if(dirtyUpdate & STATE_DEPTH_TEST_AND_MASK) {
+    if(dirtyState & STATE_DEPTH_TEST_AND_MASK) {
         GPU_SetDepthTestAndWriteMask(depthEnable, (GPU_TESTFUNC) depthFunc, (GPU_WRITEMASK) componentMask);
     }
 
-    if((dirtyUpdate & STATE_ACTIVE_SHADER) && activeShader != NULL && activeShader->dvlb != NULL) {
+    if((dirtyState & STATE_ACTIVE_SHADER) && activeShader != NULL && activeShader->dvlb != NULL) {
         shaderProgramUse(&activeShader->program);
     }
 
-    if((dirtyUpdate & STATE_TEX_ENV) && dirtyTexEnvs != 0) {
+    if((dirtyState & STATE_TEX_ENV) && dirtyTexEnvs != 0) {
         for(u8 env = 0; env < TEX_ENV_COUNT; env++) {
             if(dirtyTexEnvs & (1 << env)) {
                 GPU_SetTexEnv(env, texEnv[env].rgbSources, texEnv[env].alphaSources, texEnv[env].rgbOperands, texEnv[env].alphaOperands, (GPU_COMBINEFUNC) texEnv[env].rgbCombine, (GPU_COMBINEFUNC) texEnv[env].alphaCombine, texEnv[env].constantColor);
@@ -346,13 +344,14 @@ void gpuUpdateState() {
         dirtyTexEnvs = 0;
     }
 
-    if((dirtyUpdate & STATE_TEXTURES) && dirtyTextures != 0) {
+    if((dirtyState & STATE_TEXTURES) && dirtyTextures != 0) {
         for(u8 unit = 0; unit < TEX_UNIT_COUNT; unit++) {
             TexUnit texUnit = (TexUnit) (1 << unit);
             if(dirtyTextures & texUnit) {
                 TextureData* textureData = activeTextures[unit];
                 if(textureData != NULL && textureData->data != NULL) {
                     GPU_SetTexture((GPU_TEXUNIT) texUnit, (u32*) osConvertVirtToPhys((u32) textureData->data), (u16) textureData->width, (u16) textureData->height, textureData->params, (GPU_TEXCOLOR) textureData->format);
+                    GPU_SetTextureBorderColor((GPU_TEXUNIT) texUnit, textureData->borderColor);
                     enabledTextures |= texUnit;
                 } else {
                     enabledTextures &= ~texUnit;
@@ -363,6 +362,8 @@ void gpuUpdateState() {
         GPU_SetTextureEnable((GPU_TEXUNIT) enabledTextures);
         dirtyTextures = 0;
     }
+
+    dirtyState = 0;
 }
 
 void gpuSafeWait(GSP_Event event) {
@@ -937,6 +938,26 @@ void gpuTextureData(u32 texture, const void* data, u32 width, u32 height, PixelF
     GSPGPU_FlushDataCache(NULL, (u8*) data, (u32) (width * height * nibblesPerPixelFormat[format] / 2));
     GX_SetDisplayTransfer(NULL, (u32*) data, (height << 16) | width, (u32*) textureData->data, (height << 16) | width, (u32) (GX_TRANSFER_OUT_TILED(true) | GX_TRANSFER_IN_FORMAT(format) | GX_TRANSFER_OUT_FORMAT(format)));
     gpuSafeWait(GSPEVENT_PPF);
+}
+
+void gpuTextureBorderColor(u32 texture, u8 red, u8 green, u8 blue, u8 alpha) {
+    TextureData* textureData = (TextureData*) texture;
+    if(textureData == NULL) {
+        return;
+    }
+
+    u32 color = (u32) (((red & 0xFF) << 24) | ((green & 0xFF) << 16) | ((blue & 0xFF) << 8) | (alpha & 0xFF));
+    if(textureData->borderColor == color) {
+        return;
+    }
+
+    textureData->borderColor = color;
+    for(u8 unit = 0; unit < TEX_UNIT_COUNT; unit++) {
+        if(activeTextures[unit] == textureData) {
+            dirtyState |= STATE_TEXTURES;
+            dirtyTextures |= (1 << unit);
+        }
+    }
 }
 
 void gpuBindTexture(TexUnit unit, u32 texture) {

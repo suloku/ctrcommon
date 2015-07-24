@@ -17,8 +17,8 @@
 
 #define TEXTURE_MAG_FILTER(v) (((v)&0x1)<<1)
 #define TEXTURE_MIN_FILTER(v) (((v)&0x1)<<2)
-#define TEXTURE_WRAP_S(v) (((v)&0x3)<<8)
-#define TEXTURE_WRAP_T(v) (((v)&0x3)<<12)
+#define TEXTURE_WRAP_S(v) (((v)&0x3)<<12)
+#define TEXTURE_WRAP_T(v) (((v)&0x3)<<8)
 
 typedef enum {
     TOP_SCREEN,
@@ -157,8 +157,10 @@ typedef enum {
 } TextureFilter;
 
 typedef enum {
-    WRAP_CLAMP_TO_EDGE = 0x0,
-    WRAP_REPEAT = 0x2
+    WRAP_CLAMP_TO_EDGE   = 0x0,
+    WRAP_CLAMP_TO_BORDER = 0x1,
+    WRAP_REPEAT          = 0x2,
+    WRAP_MIRRORED_REPEAT = 0x3
 } TextureWrap;
 
 typedef enum {
@@ -251,6 +253,7 @@ void gpuFreeTexture(u32 texture);
 void* gpuGetTextureData(u32 texture);
 void gpuTextureInfo(u32 texture, u32 width, u32 height, PixelFormat format, u32 params);
 void gpuTextureData(u32 texture, const void* data, u32 width, u32 height, PixelFormat format, u32 params);
+void gpuTextureBorderColor(u32 texture, u8 red, u8 green, u8 blue, u8 alpha);
 void gpuBindTexture(TexUnit unit, u32 texture);
 
 // GPUT - GPU Tools
