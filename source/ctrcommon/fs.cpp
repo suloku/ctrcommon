@@ -48,6 +48,15 @@ bool fsIsDirectory(const std::string path) {
     return false;
 }
 
+std::string fsGetFileName(const std::string path) {
+    std::string::size_type slashPos = path.rfind('/');
+    if(slashPos == std::string::npos) {
+        return path;
+    }
+
+    return path.substr(slashPos + 1);
+}
+
 std::string fsGetExtension(const std::string path) {
     std::string::size_type dotPos = path.rfind('.');
     if(dotPos == std::string::npos) {
