@@ -138,7 +138,8 @@ bool serviceRequire(const std::string service) {
     bool result = serviceInit(service);
 
     // If we don't have access to the service, try to gain access through kernel exploits.
-    if(!result && platformHasError()) {
+    // We only do this when launched through a launcher, as a 3DS or CIA should have everything it needs.
+    if(!result && platformHasLauncher() && platformHasError()) {
         Error error = platformGetError();
         if(error.module == MODULE_NN_SRV && error.description == DESCRIPTION_ACCESS_DENIED && serviceAcquireKernel()) {
             result = serviceInit(service);
