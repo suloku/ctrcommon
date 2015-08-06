@@ -99,75 +99,85 @@ static PixelFormat fbFormatToGPU[] = {
 
 extern Handle gspEvents[GSPEVENT_MAX];
 
-u32 dirtyState;
-u32 dirtyTexEnvs;
-u32 dirtyTextures;
+static aptHookCookie hookCookie;
 
-u32 clearColor;
-u32 clearDepth;
+static u32 dirtyState;
+static u32 dirtyTexEnvs;
+static u32 dirtyTextures;
 
-Screen viewportScreen;
-u32 viewportX;
-u32 viewportY;
-u32 viewportWidth;
-u32 viewportHeight;
+static u32 clearColor;
+static u32 clearDepth;
 
-ScissorMode scissorMode;
-u32 scissorX;
-u32 scissorY;
-u32 scissorWidth;
-u32 scissorHeight;
+static Screen viewportScreen;
+static u32 viewportX;
+static u32 viewportY;
+static u32 viewportWidth;
+static u32 viewportHeight;
 
-float depthNear;
-float depthFar;
+static ScissorMode scissorMode;
+static u32 scissorX;
+static u32 scissorY;
+static u32 scissorWidth;
+static u32 scissorHeight;
 
-CullMode cullMode;
+static float depthNear;
+static float depthFar;
 
-bool stencilEnable;
-TestFunc stencilFunc;
-u8 stencilRef;
-u8 stencilMask;
-u8 stencilReplace;
-StencilOp stencilFail;
-StencilOp stencilZFail;
-StencilOp stencilZPass;
+static CullMode cullMode;
 
-u8 blendRed;
-u8 blendGreen;
-u8 blendBlue;
-u8 blendAlpha;
-BlendEquation blendColorEquation;
-BlendEquation blendAlphaEquation;
-BlendFactor blendColorSrc;
-BlendFactor blendColorDst;
-BlendFactor blendAlphaSrc;
-BlendFactor blendAlphaDst;
+static bool stencilEnable;
+static TestFunc stencilFunc;
+static u8 stencilRef;
+static u8 stencilMask;
+static u8 stencilReplace;
+static StencilOp stencilFail;
+static StencilOp stencilZFail;
+static StencilOp stencilZPass;
 
-bool alphaEnable;
-TestFunc alphaFunc;
-u8 alphaRef;
+static u8 blendRed;
+static u8 blendGreen;
+static u8 blendBlue;
+static u8 blendAlpha;
+static BlendEquation blendColorEquation;
+static BlendEquation blendAlphaEquation;
+static BlendFactor blendColorSrc;
+static BlendFactor blendColorDst;
+static BlendFactor blendAlphaSrc;
+static BlendFactor blendAlphaDst;
 
-bool depthEnable;
-TestFunc depthFunc;
+static bool alphaEnable;
+static TestFunc alphaFunc;
+static u8 alphaRef;
 
-u32 componentMask;
+static bool depthEnable;
+static TestFunc depthFunc;
 
-ShaderData* activeShader;
+static u32 componentMask;
 
-TexEnv texEnv[TEX_ENV_COUNT];
+static ShaderData* activeShader;
 
-TextureData* activeTextures[TEX_UNIT_COUNT];
-u32 enabledTextures;
+static TexEnv texEnv[TEX_ENV_COUNT];
 
-bool allow3d;
-ScreenSide screenSide;
+static TextureData* activeTextures[TEX_UNIT_COUNT];
+static u32 enabledTextures;
 
-u32* gpuCommandBuffer;
-u32* gpuFrameBuffer;
-u32* gpuDepthBuffer;
+static bool allow3d;
+static ScreenSide screenSide;
+
+static u32* gpuCommandBuffer;
+static u32* gpuFrameBuffer;
+static u32* gpuDepthBuffer;
 
 extern void gputInit();
 extern void gputCleanup();
+
+static void aptHook(int hook, void* param) {
+    if(hook == APTHOOK_ONRESTORE) {
+        dirtyState = 0xFFFFFFFF;
+        dirtyTexEnvs = 0xFFFFFFFF;
+        dirtyTextures = 0xFFFFFFFF;
+    }
+}
 
 bool gpuInit() {
     dirtyState = 0xFFFFFFFF;
@@ -261,6 +271,8 @@ bool gpuInit() {
     GPU_Init(NULL);
     GPU_Reset(NULL, gpuCommandBuffer, GPU_COMMAND_BUFFER_SIZE);
 
+    aptHook(&hookCookie, aptHook, NULL);
+
     gputInit();
     gpuClear();
     return true;
@@ -268,6 +280,8 @@ bool gpuInit() {
 
 void gpuCleanup() {
     gputCleanup();
+
+    aptUnhook(&hookCookie);
 
     if(gpuCommandBuffer != NULL) {
         linearFree(gpuCommandBuffer);
