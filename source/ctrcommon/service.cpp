@@ -9,6 +9,7 @@
 #include <map>
 
 #include <3ds.h>
+#include <ctrcommon/platform.hpp>
 
 #define GET_BITS(v, s, e) (((v) >> (s)) & ((1 << ((e) - (s) + 1)) - 1))
 
@@ -65,6 +66,7 @@ void irCleanup() {
 }
 
 static std::map<std::string, std::function<void()>> services;
+static bool kernel = false;
 
 void serviceCleanup() {
     for(std::map<std::string, std::function<void()>>::iterator it = services.begin(); it != services.end(); it++) {
@@ -74,31 +76,29 @@ void serviceCleanup() {
     }
 
     services.clear();
+
+    if(kernel) {
+        khaxExit();
+        kernel = false;
+    }
 }
 
-bool serviceCheckNew3DS() {
-    if(osGetKernelVersion() >= SYSTEM_VERSION(2, 44, 6)) {
-        u8 isNew3DS = 0;
-        Result result = APT_CheckNew3DS(NULL, &isNew3DS);
-        if(result == 0) {
-            return isNew3DS != 0;
+bool serviceAcquireKernel() {
+    if(!kernel) {
+        Result result = khaxInit();
+        kernel = result == 0;
+        if(!kernel) {
+            platformSetError(serviceParseError((u32) result));
         }
     }
 
-    return false;
+    return kernel;
 }
 
-bool serviceRequire(const std::string service) {
-    if(services.find(service) != services.end()) {
-        return true;
-    }
-
+bool serviceInit(const std::string service) {
     Result result = 0;
     std::function<void()> cleanup = NULL;
-    if(service.compare("gfx") == 0) {
-        result = (gfxInitDefault(), 0);
-        cleanup = &gfxExit;
-    } else if(service.compare("soc") == 0) {
+    if(service.compare("soc") == 0) {
         result = socInit();
         cleanup = &socCleanup;
     } else if(service.compare("ir") == 0) {
@@ -110,24 +110,15 @@ bool serviceRequire(const std::string service) {
     } else if(service.compare("ptm") == 0) {
         result = ptmInit();
         cleanup = &ptmExit;
-    } else if(service.compare("kernel") == 0) {
-        result = khaxInit();
-        cleanup = &khaxExit;
-    } else {
-        if(!platformIsNinjhax() || (service.compare("csnd") == 0 && !serviceCheckNew3DS()) || serviceRequire("kernel")) {
-            if(service.compare("am") == 0) {
-                result = amInit();
-                cleanup = &amExit;
-            } else if(service.compare("csnd") == 0) {
-                result = csndInit();
-                cleanup = &csndExit;
-            } else if(service.compare("nor") == 0) {
-                result = CFGNOR_Initialize(1);
-                cleanup = &CFGNOR_Shutdown;
-            }
-        } else {
-            return false;
-        }
+    } else if(service.compare("am") == 0) {
+        result = amInit();
+        cleanup = &amExit;
+    } else if(service.compare("csnd") == 0) {
+        result = csndInit();
+        cleanup = &csndExit;
+    } else if(service.compare("nor") == 0) {
+        result = CFGNOR_Initialize(1);
+        cleanup = &CFGNOR_Shutdown;
     }
 
     if(result == 0) {
@@ -137,6 +128,26 @@ bool serviceRequire(const std::string service) {
     }
 
     return result == 0;
+}
+
+bool serviceRequire(const std::string service) {
+    if(services.find(service) != services.end()) {
+        return true;
+    }
+
+    bool result = serviceInit(service);
+
+    // If we don't have access to the service, try to gain access through kernel exploits.
+    if(!result && platformHasError()) {
+        Error error = platformGetError();
+        if(error.module == MODULE_NN_SRV && error.description == DESCRIPTION_ACCESS_DENIED && serviceAcquireKernel()) {
+            result = serviceInit(service);
+        } else {
+            platformSetError(error);
+        }
+    }
+
+    return result;
 }
 
 Error serviceParseError(u32 error) {

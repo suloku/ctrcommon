@@ -170,9 +170,7 @@ extern void gputInit();
 extern void gputCleanup();
 
 bool gpuInit() {
-    if(!serviceRequire("gfx")) {
-        return false;
-    }
+    gfxInitDefault();
 
     dirtyState = 0xFFFFFFFF;
     dirtyTexEnvs = 0xFFFFFFFF;
@@ -285,6 +283,8 @@ void gpuCleanup() {
         vramFree(gpuDepthBuffer);
         gpuDepthBuffer = NULL;
     }
+
+    gfxExit();
 }
 
 void* gpuAlloc(u32 size) {

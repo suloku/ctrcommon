@@ -187,13 +187,11 @@ typedef struct {
     ErrorDescription description;
 } Error;
 
-bool platformInit();
+bool platformInit(int argc);
 void platformCleanup();
 
 bool platformIsRunning();
-bool platformIsNinjhax();
-
-bool platformExecuteKernel(s32 (*func)());
+bool platformHasLauncher();
 
 u32 platformGetDeviceId();
 

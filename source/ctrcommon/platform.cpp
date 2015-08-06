@@ -14,6 +14,8 @@
 
 #include <ctrcommon/gpu.hpp>
 
+static bool launcher = false;
+
 static bool hasError = false;
 static Error currentError = {0};
 
@@ -23,7 +25,8 @@ extern void gpuCleanup();
 extern void uiInit();
 extern void uiCleanup();
 
-bool platformInit() {
+bool platformInit(int argc) {
+    launcher = argc > 0;
     if(gpuInit()) {
         uiInit();
         return true;
@@ -42,22 +45,8 @@ bool platformIsRunning() {
     return aptMainLoop();
 }
 
-bool platformIsNinjhax() {
-    Result result = hbInit();
-    if(result == 0) {
-        hbExit();
-    }
-
-    return result == 0;
-}
-
-bool platformExecuteKernel(s32 (*func)()) {
-    if(!serviceRequire("kernel")) {
-        return false;
-    }
-
-    svcBackdoor(func);
-    return true;
+bool platformHasLauncher() {
+    return launcher;
 }
 
 u32 platformGetDeviceId() {

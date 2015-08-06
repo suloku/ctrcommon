@@ -57,12 +57,12 @@ const std::string appGetResultString(AppResult result) {
         resultMsg << "Process closing.";
     } else if(result == APP_OPERATION_CANCELLED) {
         resultMsg << "Operation cancelled.";
-    } else if(result == APP_AM_INIT_FAILED) {
-        resultMsg << "Could not initialize AM service.";
     } else if(result == APP_IO_ERROR) {
         resultMsg << "I/O Error." << "\n" << strerror(errno);
     } else if(result == APP_OPEN_FILE_FAILED) {
         resultMsg << "Could not open file." << "\n" << strerror(errno);
+    } else if(result == APP_AM_INIT_FAILED) {
+        resultMsg << "Could not initialize AM service." << "\n" << platformGetErrorString(platformGetError());
     } else if(result == APP_BEGIN_INSTALL_FAILED) {
         resultMsg << "Could not begin installation." << "\n" << platformGetErrorString(platformGetError());
     } else if(result == APP_INSTALL_ERROR) {
