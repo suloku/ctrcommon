@@ -170,8 +170,6 @@ extern void gputInit();
 extern void gputCleanup();
 
 bool gpuInit() {
-    gfxInitDefault();
-
     dirtyState = 0xFFFFFFFF;
     dirtyTexEnvs = 0xFFFFFFFF;
     dirtyTextures = 0xFFFFFFFF;
@@ -257,7 +255,9 @@ bool gpuInit() {
     gpuFrameBuffer = (u32*) vramAlloc(TOP_WIDTH * TOP_HEIGHT * sizeof(u32));
     gpuDepthBuffer = (u32*) vramAlloc(TOP_WIDTH * TOP_HEIGHT * sizeof(u32));
 
+    gfxInitDefault();
     gfxSet3D(true);
+
     GPU_Init(NULL);
     GPU_Reset(NULL, gpuCommandBuffer, GPU_COMMAND_BUFFER_SIZE);
 
