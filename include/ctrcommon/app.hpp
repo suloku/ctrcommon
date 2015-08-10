@@ -53,6 +53,7 @@ typedef enum {
 const std::string appGetResultString(AppResult result);
 const std::string appGetPlatformName(AppPlatform platform);
 const std::string appGetCategoryName(AppCategory category);
+u32 appGetDeviceId();
 App appGetCiaInfo(const std::string file, MediaType mediaType);
 bool appIsInstalled(App app);
 std::vector<App> appList(MediaType mediaType);

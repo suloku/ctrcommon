@@ -6,8 +6,7 @@
 
 #include <string>
 
-void serviceCleanup();
-bool serviceRequire(const std::string service);
+bool serviceAcquire();
 Error serviceParseError(u32 error);
 
 #endif

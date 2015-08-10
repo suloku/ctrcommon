@@ -4,6 +4,31 @@
 
 #include <3ds.h>
 
+bool hasCsnd = false;
+Error csndError = {};
+
+void soundInit() {
+    Result result = csndInit();
+    if(result != 0 && serviceAcquire()) {
+        result = csndInit();
+    }
+
+    if(result != 0) {
+        csndError = serviceParseError((u32) result);
+    }
+
+    hasCsnd = result == 0;
+}
+
+void soundCleanup() {
+    if(hasCsnd) {
+        csndExit();
+
+        hasCsnd = false;
+        csndError = {};
+    }
+}
+
 void* soundAlloc(u32 size) {
     return linearAlloc(size);
 }
@@ -13,7 +38,12 @@ void soundFree(void* mem) {
 }
 
 bool soundPlay(u32 channel, void *samples, u32 numSamples, SampleFormat format, u32 sampleRate, float leftVolume, float rightVolume, bool loop) {
-    if(samples == NULL || !serviceRequire("csnd")) {
+    if(!hasCsnd) {
+        platformSetError(csndError);
+        return false;
+    }
+
+    if(samples == NULL) {
         return false;
     }
 
@@ -76,7 +106,8 @@ bool soundPlay(u32 channel, void *samples, u32 numSamples, SampleFormat format, 
 }
 
 bool soundStop(u32 channel) {
-    if(!serviceRequire("csnd")) {
+    if(!hasCsnd) {
+        platformSetError(csndError);
         return false;
     }
 
@@ -90,7 +121,8 @@ bool soundStop(u32 channel) {
 }
 
 bool soundFlush() {
-    if(!serviceRequire("csnd")) {
+    if(!hasCsnd) {
+        platformSetError(csndError);
         return false;
     }
 

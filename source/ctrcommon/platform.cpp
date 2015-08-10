@@ -3,7 +3,6 @@
 #include "service.hpp"
 #include "../libkhax/khax.h"
 
-#include <malloc.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -12,12 +11,16 @@
 
 #include <3ds.h>
 
-#include <ctrcommon/gpu.hpp>
-
 static bool launcher = false;
 
 static bool hasError = false;
-static Error currentError = {0};
+static Error currentError = {};
+
+static bool hasAc = false;
+static Error acError = {};
+
+static bool hasPtm = false;
+static Error ptmError = {};
 
 extern bool gpuInit();
 extern void gpuCleanup();
@@ -25,10 +28,78 @@ extern void gpuCleanup();
 extern void uiInit();
 extern void uiCleanup();
 
+extern void appInit();
+extern void appCleanup();
+
+extern void irInit();
+extern void irCleanup();
+
+extern void norInit();
+extern void norCleanup();
+
+extern void socInit();
+extern void socCleanup();
+
+extern void soundInit();
+extern void soundCleanup();
+
+void wifiInit() {
+    Result result = acInit();
+    if(result != 0 && serviceAcquire()) {
+        result = acInit();
+    }
+
+    if(result != 0) {
+        acError = serviceParseError((u32) result);
+    }
+
+    hasAc = result == 0;
+}
+
+void wifiCleanup() {
+    if(hasAc) {
+        acExit();
+
+        hasAc = false;
+        acError = {};
+    }
+}
+
+void batteryInit() {
+    Result result = ptmInit();
+    if(result != 0 && serviceAcquire()) {
+        result = ptmInit();
+    }
+
+    if(result != 0) {
+        ptmError = serviceParseError((u32) result);
+    }
+
+    hasPtm = result == 0;
+}
+
+void batteryCleanup() {
+    if(hasPtm) {
+        ptmExit();
+
+        hasPtm = false;
+        ptmError = {};
+    }
+}
+
 bool platformInit(int argc) {
     launcher = argc > 0;
     if(gpuInit()) {
+        appInit();
+        irInit();
+        norInit();
+        socInit();
+        soundInit();
+        wifiInit();
+        batteryInit();
+
         uiInit();
+
         return true;
     }
 
@@ -37,8 +108,16 @@ bool platformInit(int argc) {
 
 void platformCleanup() {
     uiCleanup();
+
+    appCleanup();
+    irCleanup();
+    norCleanup();
+    socCleanup();
+    soundCleanup();
+    wifiCleanup();
+    batteryCleanup();
+
     gpuCleanup();
-    serviceCleanup();
 }
 
 bool platformIsRunning() {
@@ -49,23 +128,9 @@ bool platformHasLauncher() {
     return launcher;
 }
 
-u32 platformGetDeviceId() {
-    if(!serviceRequire("am")) {
-        return 0;
-    }
-
-    u32 deviceId;
-    Result result = AM_GetDeviceId(&deviceId);
-    if(result != 0) {
-        platformSetError(serviceParseError((u32) result));
-        return 0;
-    }
-    
-    return deviceId;
-}
-
 bool platformIsWifiConnected() {
-    if(!serviceRequire("ac")) {
+    if(!hasAc) {
+        platformSetError(acError);
         return false;
     }
 
@@ -80,7 +145,8 @@ bool platformIsWifiConnected() {
 }
 
 bool platformWaitForInternet() {
-    if(!serviceRequire("ac")) {
+    if(!hasAc) {
+        platformSetError(acError);
         return false;
     }
 
@@ -97,7 +163,8 @@ u8 platformGetWifiLevel() {
 }
 
 bool platformIsBatteryCharging() {
-    if(!serviceRequire("ptm")) {
+    if(!hasPtm) {
+        platformSetError(ptmError);
         return false;
     }
 
@@ -112,7 +179,8 @@ bool platformIsBatteryCharging() {
 }
 
 u8 platformGetBatteryLevel() {
-    if(!serviceRequire("ptm")) {
+    if(!hasPtm) {
+        platformSetError(ptmError);
         return 0;
     }
 
@@ -153,7 +221,7 @@ Error platformGetError() {
     Error error = currentError;
     if(hasError) {
         hasError = false;
-        currentError = {0};
+        currentError = {};
     }
 
     return error;
@@ -166,8 +234,6 @@ void platformSetError(Error error) {
 
 std::string platformGetErrorString(Error error) {
     std::stringstream result;
-
-    result << "Raw Error: 0x" << std::hex << error.raw << "\n";
 
     result << "Module: ";
     switch(error.module) {

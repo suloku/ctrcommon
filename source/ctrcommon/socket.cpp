@@ -5,10 +5,51 @@
 #include <arpa/inet.h>
 #include <sys/errno.h>
 #include <fcntl.h>
+#include <malloc.h>
 #include <poll.h>
 #include <string.h>
 
 #include <3ds.h>
+
+bool hasSoc = false;
+Error socError = {};
+
+static u32* socBuffer;
+
+void socInit() {
+    socBuffer = (u32*) memalign(0x1000, 0x100000);
+    if(socBuffer == NULL) {
+        socError = {MODULE_NN_SOCKET, LEVEL_FATAL, SUMMARY_OUT_OF_RESOURCE, DESCRIPTION_OUT_OF_MEMORY};
+        return;
+    }
+
+    Result result = SOC_Initialize(socBuffer, 0x100000);
+    if(result != 0 && serviceAcquire()) {
+        result = SOC_Initialize(socBuffer, 0x100000);
+    }
+
+    if(result != 0) {
+        free(socBuffer);
+        socBuffer = NULL;
+
+        socError = serviceParseError((u32) result);
+    }
+
+    hasSoc = result == 0;
+}
+
+void socCleanup() {
+    if(hasSoc) {
+        SOC_Shutdown();
+        if(socBuffer != NULL) {
+            free(socBuffer);
+            socBuffer = NULL;
+        }
+
+        hasSoc = false;
+        socError = {};
+    }
+}
 
 u64 htonll(u64 value) {
     static const int num = 42;
@@ -24,7 +65,8 @@ u64 ntohll(u64 value) {
 }
 
 u32 socketGetHostIP() {
-    if(!serviceRequire("soc")) {
+    if(!hasSoc) {
+        platformSetError(socError);
         return 0;
     }
 
@@ -32,7 +74,8 @@ u32 socketGetHostIP() {
 }
 
 int socketListen(u16 port) {
-    if(!serviceRequire("soc")) {
+    if(!hasSoc) {
+        platformSetError(socError);
         return -1;
     }
 
@@ -72,7 +115,8 @@ int socketListen(u16 port) {
 }
 
 FILE* socketAccept(int listeningSocket, std::string* acceptedIp) {
-    if(!serviceRequire("soc")) {
+    if(!hasSoc) {
+        platformSetError(socError);
         return NULL;
     }
 
@@ -102,7 +146,8 @@ FILE* socketAccept(int listeningSocket, std::string* acceptedIp) {
 }
 
 FILE* socketConnect(const std::string ipAddress, u16 port, int timeout) {
-    if(!serviceRequire("soc")) {
+    if(!hasSoc) {
+        platformSetError(socError);
         return NULL;
     }
 

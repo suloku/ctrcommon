@@ -12,7 +12,31 @@
 #include <sstream>
 
 #include <3ds.h>
-#include <ctrcommon/app.hpp>
+
+bool hasAm = false;
+Error amError = {};
+
+void appInit() {
+    Result result = amInit();
+    if(result != 0 && serviceAcquire()) {
+        result = amInit();
+    }
+
+    if(result != 0) {
+        amError = serviceParseError((u32) result);
+    }
+
+    hasAm = result == 0;
+}
+
+void appCleanup() {
+    if(hasAm) {
+        amExit();
+
+        hasAm = false;
+        amError = {};
+    }
+}
 
 u8 appMediatypeToByte(MediaType mediaType) {
     return mediaType == NAND ? mediatype_NAND : mediatype_SDMC;
@@ -114,8 +138,25 @@ const std::string appGetCategoryName(AppCategory category) {
     }
 }
 
+u32 appGetDeviceId() {
+    if(!hasAm) {
+        platformSetError(amError);
+        return 0;
+    }
+
+    u32 deviceId;
+    Result result = AM_GetDeviceId(&deviceId);
+    if(result != 0) {
+        platformSetError(serviceParseError((u32) result));
+        return 0;
+    }
+
+    return deviceId;
+}
+
 App appGetCiaInfo(const std::string file, MediaType mediaType) {
-    if(!serviceRequire("am")) {
+    if(!hasAm) {
+        platformSetError(amError);
         return {};
     }
 
@@ -156,7 +197,8 @@ App appGetCiaInfo(const std::string file, MediaType mediaType) {
 }
 
 bool appIsInstalled(App app) {
-    if(!serviceRequire("am")) {
+    if(!hasAm) {
+        platformSetError(amError);
         return false;
     }
 
@@ -185,7 +227,8 @@ bool appIsInstalled(App app) {
 
 std::vector<App> appList(MediaType mediaType) {
     std::vector<App> titles;
-    if(!serviceRequire("am")) {
+    if(!hasAm) {
+        platformSetError(amError);
         return titles;
     }
 
@@ -234,7 +277,8 @@ std::vector<App> appList(MediaType mediaType) {
 }
 
 AppResult appInstallFile(MediaType mediaType, const std::string path, std::function<bool(u64 pos, u64 totalSize)> onProgress) {
-    if(!serviceRequire("am")) {
+    if(!hasAm) {
+        platformSetError(amError);
         return APP_AM_INIT_FAILED;
     }
 
@@ -254,7 +298,8 @@ AppResult appInstallFile(MediaType mediaType, const std::string path, std::funct
 }
 
 AppResult appInstall(MediaType mediaType, FILE* fd, u64 size, std::function<bool(u64 pos, u64 totalSize)> onProgress) {
-    if(!serviceRequire("am")) {
+    if(!hasAm) {
+        platformSetError(amError);
         return APP_AM_INIT_FAILED;
     }
 
@@ -327,7 +372,8 @@ AppResult appInstall(MediaType mediaType, FILE* fd, u64 size, std::function<bool
 }
 
 AppResult appDelete(App app) {
-    if(!serviceRequire("am")) {
+    if(!hasAm) {
+        platformSetError(amError);
         return APP_AM_INIT_FAILED;
     }
 

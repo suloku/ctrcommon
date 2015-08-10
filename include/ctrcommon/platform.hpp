@@ -180,7 +180,6 @@ typedef enum {
 } ErrorDescription;
 
 typedef struct {
-    u32 raw;
     ErrorModule module;
     ErrorLevel level;
     ErrorSummary summary;
@@ -192,8 +191,6 @@ void platformCleanup();
 
 bool platformIsRunning();
 bool platformHasLauncher();
-
-u32 platformGetDeviceId();
 
 bool platformIsWifiConnected();
 bool platformWaitForInternet();

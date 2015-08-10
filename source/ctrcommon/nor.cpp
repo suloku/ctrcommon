@@ -5,8 +5,34 @@
 
 #include <3ds.h>
 
+bool hasNor = false;
+Error norError = {};
+
+void norInit() {
+    Result result = CFGNOR_Initialize(1);
+    if(result != 0 && serviceAcquire()) {
+        result = CFGNOR_Initialize(1);
+    }
+
+    if(result != 0) {
+        norError = serviceParseError((u32) result);
+    }
+
+    hasNor = result == 0;
+}
+
+void norCleanup() {
+    if(hasNor) {
+        CFGNOR_Shutdown();
+
+        hasNor = false;
+        norError = {};
+    }
+}
+
 bool norRead(u32 offset, void* data, u32 size) {
-    if(!serviceRequire("nor")) {
+    if(!hasNor) {
+        platformSetError(norError);
         return false;
     }
 
@@ -19,7 +45,8 @@ bool norRead(u32 offset, void* data, u32 size) {
 }
 
 bool norWrite(u32 offset, void* data, u32 size) {
-    if(!serviceRequire("nor")) {
+    if(!hasNor) {
+        platformSetError(norError);
         return false;
     }
 
