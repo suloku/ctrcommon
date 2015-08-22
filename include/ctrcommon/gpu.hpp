@@ -49,8 +49,13 @@ typedef enum {
 
 typedef enum {
     STENCIL_OP_KEEP = 0x0,
-    STENCIL_OP_AND_NOT = 0x1,
-    STENCIL_OP_XOR = 0x5
+    STENCIL_OP_ZERO = 0x1,
+    STENCIL_OP_REPLACE = 0x2,
+    STENCIL_OP_INCR = 0x3,
+    STENCIL_OP_DECR = 0x4,
+    STENCIL_OP_INVERT = 0x5,
+    STENCIL_OP_INCR_WRAP = 0x6,
+    STENCIL_OP_DECR_WRAP = 0x7
 } StencilOp;
 
 typedef enum {
@@ -211,7 +216,7 @@ void gpuDepthMap(float near, float far);
 
 void gpuCullMode(CullMode mode);
 
-void gpuStencilTest(bool enable, TestFunc func, u8 ref, u8 mask, u8 replace);
+void gpuStencilTest(bool enable, TestFunc func, u8 ref, u8 inputMask, u8 writeMask);
 void gpuStencilOp(StencilOp fail, StencilOp zfail, StencilOp zpass);
 
 void gpuBlendColor(u8 red, u8 green, u8 blue, u8 alpha);
