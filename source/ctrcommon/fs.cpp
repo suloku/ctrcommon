@@ -2,8 +2,9 @@
 
 #include "service.hpp"
 
-#include <sys/dirent.h>
+#include <dirent.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <algorithm>
 #include <sstream>
@@ -67,13 +68,28 @@ std::string fsGetExtension(const std::string path) {
 }
 
 bool fsHasExtension(const std::string path, const std::string extension) {
-    std::string::size_type dotPos = path.rfind('.');
-    return dotPos != std::string::npos && path.substr(dotPos + 1).compare(extension) == 0;
+    if(extension.empty()) {
+        return true;
+    }
+
+    const std::string ext = fsGetExtension(path);
+    return strcasecmp(ext.c_str(), extension.c_str()) == 0;
 }
 
 bool fsHasExtensions(const std::string path, const std::vector<std::string> extensions) {
-    std::string extension = fsGetExtension(path);
-    return extensions.empty() || (extension.compare("") != 0 && std::find(extensions.begin(), extensions.end(), extension) != extensions.end());
+    if(extensions.empty()) {
+        return true;
+    }
+
+    const std::string ext = fsGetExtension(path);
+    for(std::vector<std::string>::const_iterator it = extensions.begin(); it != extensions.end(); it++) {
+        std::string extension = *it;
+        if(strcasecmp(ext.c_str(), extension.c_str()) == 0) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 std::vector<FileInfo> fsGetDirectoryContents(const std::string directory) {
